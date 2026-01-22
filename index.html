@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사단법인 S&J 희망나눔 - 공식 홈페이지</title>
+    <!-- React & Tailwind CSS Library (CDN 방식: 설치 없이 바로 실행 가능) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800&display=swap');
+        body { font-family: 'Pretendard', sans-serif; scroll-behavior: smooth; }
+        .orange-primary { color: #EA580C; }
+        .bg-orange-primary { background-color: #EA580C; }
+        .orange-gradient { background: linear-gradient(135deg, #EA580C 0%, #F97316 100%); }
+    </style>
+</head>
+<body class="bg-white text-slate-900">
+    <div id="root"></div>
+
+    <!-- React 컴포넌트 시작 -->
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [activeTab, setActiveTab] = useState('finance');
+            const [showToast, setShowToast] = useState(false);
+
+            const copyToClipboard = (text) => {
+                const el = document.createElement('textarea');
+                el.value = text;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                setShowToast(true);
+                setTimeout(() => setShowToast(false), 2000);
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    {/* Toast Alert */}
+                    {showToast && (
+                        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[1000] bg-slate-900 text-white px-6 py-3 rounded-full font-bold shadow-2xl transition-all">
+                            ✅ 계좌번호가 복사되었습니다!
+                        </div>
+                    )}
+
+                    {/* [Navbar] 젠스파크 제안 IA 반영 */}
+                    <nav className="fixed w-full bg-white/90 backdrop-blur-md z-50 border-b border-slate-100">
+                        <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
+                            <div className="flex items-center space-x-2">
+                                <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">SJ</div>
+                                <div className="flex flex-col">
+                                    <span className="text-xl font-black tracking-tighter">S&J 희망나눔</span>
+                                    <span className="text-[9px] text-orange-600 font-bold uppercase tracking-widest">Education Hub</span>
+                                </div>
+                            </div>
+                            <div className="hidden md:flex space-x-8 text-sm font-bold text-slate-500">
+                                <a href="#intro" className="hover:text-orange-600">소개</a>
+                                <a href="#it-hub" class="hover:text-orange-600">IT교육</a>
+                                <a href="#donation" class="hover:text-orange-600">후원하기</a>
+                                <a href="#reports" class="hover:text-orange-600">활동·보고</a>
+                            </div>
+                            <button className="bg-orange-600 text-white px-6 py-2 rounded-full text-xs font-bold shadow-lg shadow-orange-100 hover:bg-orange-700 transition">정기후원</button>
+                        </div>
+                    </nav>
+
+                    {/* [Hero Section] */}
+                    <section id="intro" class="pt-48 pb-32 px-6 bg-slate-50">
+                        <div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+                            <div class="animate-fade-in">
+                                <div class="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-700 rounded-lg text-xs font-bold mb-8">
+                                    <span>청소년 미래 교육 혁신 캠페인 2026</span>
+                                </div>
+                                <h1 class="text-4xl md:text-6xl font-black leading-[1.1] mb-8 tracking-tight">
+                                    아이들의 꿈이<br /><span class="text-orange-600 italic">AI 기술</span>로<br />더 넓어지도록
+                                </h1>
+                                <p class="text-slate-500 text-lg mb-10 leading-relaxed max-w-lg">
+                                    사단법인 S&J 희망나눔은 교육 격차를 해소하고 청소년들에게 인공지능(AI) 등 미래 필수 리터러시 역량을 제공합니다.
+                                </p>
+                                <div class="flex space-x-4">
+                                    <button class="bg-orange-600 text-white px-8 py-4 rounded-2xl font-bold shadow-xl hover:bg-orange-700 transition">참여하기</button>
+                                    <button class="bg-white border border-slate-200 px-8 py-4 rounded-2xl font-bold hover:bg-slate-50 transition">보고서 열람</button>
+                                </div>
+                            </div>
+                            <div class="hidden md:block">
+                                <div class="orange-gradient rounded-[60px] aspect-square flex flex-col items-center justify-center text-white shadow-2xl p-12 group transition-transform hover:scale-105 duration-500">
+                                    <i class="fa-solid fa-microchip text-[120px] mb-8 opacity-20 absolute"></i>
+                                    <h3 class="text-3xl font-black mb-4 z-10">IT 교육 허브</h3>
+                                    <p class="opacity-90 text-center font-medium z-10 leading-relaxed">이사장님의 전문 AI 교실 소식을<br />실시간으로 전해드립니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* [IT HUB] 이사장님 인공지능 수업 특화 섹션 */}
+                    <section id="it-hub" class="py-32 px-6 bg-white">
+                        <div class="max-w-7xl mx-auto">
+                            <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+                                <div>
+                                    <h2 class="text-orange-600 font-bold text-xs uppercase tracking-widest mb-4">Chairman's AI Lab</h2>
+                                    <h3 class="text-3xl md:text-4xl font-black leading-tight">청소년의 디지털 역량,<br />S&J가 책임집니다.</h3>
+                                </div>
+                                <button class="bg-slate-900 text-white px-6 py-3 rounded-xl text-xs font-bold hover:bg-orange-600 transition">연구보고서 PDF 다운로드 <i class="fa-solid fa-download ml-2"></i></button>
+                            </div>
+
+                            <div class="grid md:grid-cols-3 gap-10">
+                                <div class="p-10 rounded-[48px] bg-slate-50 border border-transparent hover:border-orange-500 transition-all duration-500 group">
+                                    <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-orange-600 mb-8 shadow-sm group-hover:bg-orange-600 group-hover:text-white transition">
+                                        <i class="fa-solid fa-robot text-2xl"></i>
+                                    </div>
+                                    <h4 class="text-xl font-bold mb-4">생성형 AI 리터러시</h4>
+                                    <p class="text-sm text-slate-500 leading-relaxed mb-8">AI의 원리를 이해하고 실제 삶의 문제를 해결하는 프로젝트형 수업을 진행합니다.</p>
+                                    <span class="text-xs font-black text-orange-600">상세 커리큘럼 보기 →</span>
+                                </div>
+                                <div class="p-10 rounded-[48px] bg-slate-50 border border-transparent hover:border-orange-500 transition-all duration-500 group">
+                                    <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-orange-600 mb-8 shadow-sm group-hover:bg-orange-600 group-hover:text-white transition">
+                                        <i class="fa-solid fa-laptop-code text-2xl"></i>
+                                    </div>
+                                    <h4 class="text-xl font-bold mb-4">미래인재 코딩 클래스</h4>
+                                    <p class="text-sm text-slate-500 leading-relaxed mb-8">파이썬과 블록코딩을 통해 청소년들의 논리적 사고력을 극대화하는 지역 밀착형 교육입니다.</p>
+                                    <span class="text-xs font-black text-orange-600">신청 안내 보기 →</span>
+                                </div>
+                                <div class="p-10 rounded-[48px] bg-orange-50 border border-orange-100 group transition-all duration-500">
+                                    <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-orange-600 mb-8 shadow-sm">
+                                        <i class="fa-solid fa-file-waveform text-2xl"></i>
+                                    </div>
+                                    <h4 class="text-xl font-bold mb-4 tracking-tight">IT 교육 연구 성과</h4>
+                                    <p class="text-sm text-slate-500 leading-relaxed mb-8">이사장님의 전문성이 담긴 매년 IT 교육 임팩트 리포트를 투명하게 공개합니다.</p>
+                                    <span class="text-xs font-black text-orange-600 underline underline-offset-4">2024 연구보고서 발간 완료</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* [Donation] 후원 안내 섹션 */}
+                    <section id="donation" class="py-32 px-6 bg-slate-900 text-white text-center relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-80 h-80 bg-orange-600/20 rounded-full blur-[120px]"></div>
+                        <div class="max-w-4xl mx-auto relative z-10">
+                            <h2 class="text-3xl md:text-5xl font-black mb-16 italic tracking-tighter">"작은 마음이 모여 아이들의 커다란 우주가 됩니다"</h2>
+                            <div class="grid md:grid-cols-2 gap-8">
+                                <div class="bg-white/5 border border-white/10 p-10 rounded-[40px] backdrop-blur-lg flex flex-col items-center">
+                                    <span class="text-[10px] font-black text-orange-400 mb-3 uppercase tracking-widest">하나은행</span>
+                                    <p class="text-2xl font-black mb-8 tracking-tight">123-456789-01234</p>
+                                    <button onClick={() => copyToClipboard('123-456789-01234')} class="w-full py-4 bg-white text-slate-900 rounded-2xl font-bold hover:bg-orange-600 hover:text-white transition">계좌번호 복사하기</button>
+                                </div>
+                                <div class="bg-white/5 border border-white/10 p-10 rounded-[40px] backdrop-blur-lg flex flex-col items-center">
+                                    <span class="text-[10px] font-black text-orange-400 mb-3 uppercase tracking-widest">대구은행</span>
+                                    <p class="text-2xl font-black mb-8 tracking-tight">10-20-304050-6</p>
+                                    <button onClick={() => copyToClipboard('10-20-304050-6')} class="w-full py-4 bg-white text-slate-900 rounded-2xl font-bold hover:bg-orange-600 hover:text-white transition">계좌번호 복사하기</button>
+                                </div>
+                            </div>
+                            <p class="mt-12 text-slate-400 text-sm">※ 기부금 영수증 발급은 고객센터(053-000-0000)로 문의주세요.</p>
+                        </div>
+                    </section>
+
+                    {/* [Footer] */}
+                    <footer class="py-20 bg-white border-t border-slate-100 text-center">
+                        <div class="max-w-7xl mx-auto px-6">
+                            <div class="flex justify-center items-center space-x-3 mb-10">
+                                <div class="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 font-bold">S</div>
+                                <span class="text-xl font-bold tracking-tighter uppercase text-slate-400">S&J Hope Sharing</span>
+                            </div>
+                            <p class="text-slate-400 text-sm mb-4 font-medium leading-relaxed">
+                                대구광역시 북구 대학로 80 경북대학교 테크노파크 201호<br />
+                                대표자: 윤동성 | 고유번호: 000-00-00000 | T. 053-000-0000
+                            </p>
+                            <p class="text-[10px] text-slate-300 font-black uppercase tracking-[0.3em]">© 2026 S&J HOPE SHARING. ALL RIGHTS RESERVED.</p>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
