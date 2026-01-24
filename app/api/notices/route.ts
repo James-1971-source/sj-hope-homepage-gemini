@@ -1,6 +1,9 @@
 // app/api/notices/route.ts
 import { NextResponse } from 'next/server';
 
+// [추가] 이 줄을 추가하면 Vercel이 캐시를 쓰지 않고 항상 노션에서 새 데이터를 가져옵니다.
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const apiKey = process.env.NOTION_API_KEY;
   const databaseId = process.env.NOTION_DATABASE_ID;
