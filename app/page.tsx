@@ -54,6 +54,8 @@ export default function App() {
             id: item.id,
             title: item.properties.제목?.title[0]?.plain_text || '내용 없음',
             date: item.properties.날짜?.date?.start || '2026.01.23'
+            // [추가] 노션의 '설명' 칸 내용을 가져옵니다.
+            description: item.properties.설명?.rich_text[0]?.plain_text || ''
           }));
           setNotices(formatted);
         } else {
@@ -181,6 +183,11 @@ export default function App() {
                 <h4 className="text-xl font-bold mb-5 line-clamp-2 group-hover:text-orange-600 transition-colors leading-snug tracking-tight">
                   {n.title}
                 </h4>
+                {/* [추가] 설명을 보여주는 코드를 넣습니다. */}
+                <p className="text-sm text-slate-500 mb-6 line-clamp-3 font-medium leading-relaxed">
+                  {n.description}
+                </p>
+                
                 <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Date: {n.date}</p>
               </div>
             ))}
