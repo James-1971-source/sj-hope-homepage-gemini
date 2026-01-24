@@ -53,7 +53,7 @@ export default function App() {
           const formatted = data.results.map((item: any) => ({
             id: item.id,
             title: item.properties.제목?.title[0]?.plain_text || '내용 없음',
-            date: item.properties.날짜?.date?.start || '2026.01.23'
+            date: item.properties.날짜?.date?.start || '2026.01.23',
             // [추가] 노션의 '설명' 칸 내용을 가져옵니다.
             description: item.properties.설명?.rich_text[0]?.plain_text || ''
           }));
