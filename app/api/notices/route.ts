@@ -17,6 +17,8 @@ export async function GET() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ page_size: 6 }),
+      // [추가] Next.js에게 이 데이터를 절대 저장하지 말고 매번 새로 가져오라고 명령합니다.
+      cache: 'no-store'
     });
 
     const data = await response.json();
