@@ -37,9 +37,6 @@ export default function App() {
 
   useEffect(() => {
     async function fetchNotionData() {
-      const apiKey = getEnv('NOTION_API_KEY');
-      const databaseId = getEnv('NOTION_DATABASE_ID');
-
       // 1. 설정 전 샘플 데이터 (디자인 확인용)
       const sampleData = [
         { id: '1', title: '사단법인 S&J 희망나눔 홈페이지 리뉴얼 안내', date: '2026.01.23' },
@@ -47,24 +44,12 @@ export default function App() {
         { id: '3', title: '대구 지역아동센터 AI 미래교실 현장 소식', date: '2026.01.15' }
       ];
 
-      if (!apiKey || !databaseId) {
-        setNotices(sampleData);
-        setLoading(false);
-        return;
-      }
-
       try {
-        const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Notion-Version': '2022-06-28',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ page_size: 6 }),
-        });
+        // [중요] 브라우저에서 직접 노션에 가지 않고, 우리가 만든 API 서버로 요청합니다.
+        const response = await fetch('/api/notices'); 
         const data = await response.json();
-        if (data.results) {
+
+        if (data.results && Array.isArray(data.results)) {
           const formatted = data.results.map((item: any) => ({
             id: item.id,
             title: item.properties.제목?.title[0]?.plain_text || '내용 없음',
@@ -72,6 +57,7 @@ export default function App() {
           }));
           setNotices(formatted);
         } else {
+          // 데이터가 없거나 에러가 나면 샘플 데이터를 보여줍니다.
           setNotices(sampleData);
         }
       } catch (error) {
