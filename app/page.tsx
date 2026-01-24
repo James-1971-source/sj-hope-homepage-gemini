@@ -55,7 +55,9 @@ export default function App() {
             title: item.properties.제목?.title[0]?.plain_text || '내용 없음',
             date: item.properties.날짜?.date?.start || '2026.01.23',
             // [추가] 노션의 '설명' 칸 내용을 가져옵니다.
-            description: item.properties.설명?.rich_text[0]?.plain_text || ''
+            description: item.properties.설명?.rich_text[0]?.plain_text || '',
+            // [추가] 노션의 '이미지' 열에서 사진 주소를 가져옵니다.
+            imageUrl: item.properties.이미지?.files[0]?.file?.url || item.properties.이미지?.files[0]?.external?.url || null
           }));
           setNotices(formatted);
         } else {
