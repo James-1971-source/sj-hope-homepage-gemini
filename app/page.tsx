@@ -23,7 +23,8 @@ export default function App() {
             id: item.id,
             title: item.properties.제목?.title[0]?.plain_text || '내용 없음',
             date: item.properties.날짜?.date?.start || '2026.01.23',
-            description: item.properties.설명?.rich_text[0]?.plain_text || '',
+            // [수정] 첫 번째 조각[0]만 가져오는 것이 아니라, 모든 조각을 합칩니다 (.join(''))
+            description: item.properties.설명?.rich_text.map((t: any) => t.plain_text).join('') || '상세 설명이 없습니다.',
             // [중요] 모든 이미지를 배열로 가져옵니다
             images: item.properties.이미지?.files.map((f: any) => f.file?.url || f.external?.url) || []
           }));
@@ -159,7 +160,7 @@ export default function App() {
         <div className="max-w-4xl mx-auto">
           <h2 className="text-4xl md:text-6xl font-black mb-20 italic tracking-tighter text-slate-900 leading-tight">"아이들의 미래를 위한<br />가장 따뜻한 투자"</h2>
           <div className="grid md:grid-cols-2 gap-8 mb-16">
-            <div className="bg-slate-900 text-white p-12 rounded-[64px] shadow-2xl relative overflow-hidden group">
+            <div className="bg-slate-900 text-white p-12 rounded-[64px] shadow-2xl  overflow-hidden group">
               <span className="text-[10px] font-black text-orange-400 mb-6 block uppercase tracking-[0.4em]">하나은행 (사단법인 S&J)</span>
               <p className="text-2xl font-black mb-10 tracking-tight leading-none">123-456789-01234</p>
               <button onClick={() => copyAcc('123-456789-01234')} className="bg-white text-slate-900 px-8 py-3 rounded-2xl font-black text-sm hover:bg-orange-600 hover:text-white transition">계좌번호 복사</button>
