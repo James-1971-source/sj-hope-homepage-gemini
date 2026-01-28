@@ -7,25 +7,14 @@ export async function GET() {
     const apiKey = process.env.NOTION_API_KEY;
     const databaseId = process.env.NOTION_DATABASE_NOTICES;
 
-    // 환경 변수 체크
-    if (!apiKey) {
+    if (!apiKey || !databaseId) {
       return NextResponse.json(
-        { error: 'NOTION_API_KEY is missing' },
+        { error: 'Environment variables missing' },
         { status: 500 }
       );
     }
 
-    if (!databaseId) {
-      return NextResponse.json(
-        { error: 'NOTION_DATABASE_NOTICES is missing' },
-        { status: 500 }
-      );
-    }
-
-    console.log('Fetching from Notion...');
-    console.log('Database ID:', databaseId);
-
-    // Notion API 호출 (필터/정렬 없이 단순하게)
+    // Notion API 호출
     const response = await fetch(
       `https://api.notion.com/v1/databases/${databaseId}/query`,
       {
@@ -36,43 +25,53 @@ export async function GET() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          page_size: 10
+          page_size: 100,
+          sorts: [
+            {
+              property: '공지 날짜 (Notice Date)',
+              direction: 'descending'
+            }
+          ]
         }),
         cache: 'no-store',
       }
     );
 
-    console.log('Response status:', response.status);
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Notion API Error Response:', errorText);
-      
       return NextResponse.json(
-        { 
-          error: 'Notion API failed',
-          status: response.status,
-          message: errorText
-        },
+        { error: 'Notion API failed', details: errorText },
         { status: response.status }
       );
     }
 
     const data = await response.json();
     
-    console.log('Success! Results count:', data.results?.length || 0);
+    // 🔄 데이터 정리 및 변환
+    const notices = data.results
+      .filter((page: any) => {
+        // 공개여부가 true인 것만 필터링
+        return page.properties['공개여부']?.checkbox === true;
+      })
+      .map((page: any) => ({
+        id: page.id,
+        title: page.properties['이름']?.title?.[0]?.plain_text || '제목 없음',
+        date: page.properties['공지 날짜 (Notice Date)']?.date?.start || '',
+        category: page.properties['카테고리']?.select?.name || '일반',
+        content: page.properties['내용']?.rich_text?.[0]?.plain_text || '',
+        pinned: page.properties['고정']?.checkbox || false,
+        views: page.properties['조회수']?.number || 0,
+        url: page.url,
+      }));
 
-    // 원본 데이터 그대로 반환
-    return NextResponse.json(data);
+    console.log(`✅ ${notices.length}개의 공지사항을 불러왔습니다.`);
+
+    return NextResponse.json(notices);
 
   } catch (error) {
-    console.error('Fatal Error:', error);
-    
+    console.error('Error:', error);
     return NextResponse.json(
-      { 
-        error: 'Server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Server error', message: error instanceof Error ? error.message : 'Unknown' },
       { status: 500 }
     );
   }
