@@ -1,23 +1,33 @@
-// app/api/notices/route.ts
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const apiKey = process.env.NOTION_API_KEY;
-  const databaseId = process.env.NOTION_DATABASE_NOTICES; // 👈 이름만 변경
-
-  // 환경 변수 체크 추가
-  if (!apiKey || !databaseId) {
-    return NextResponse.json(
-      { error: 'Missing environment variables' }, 
-      { status: 500 }
-    );
-  }
-
   try {
+    const apiKey = process.env.NOTION_API_KEY;
+    const databaseId = process.env.NOTION_DATABASE_NOTICES;
+
+    // 환경 변수 체크
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: 'NOTION_API_KEY is missing' },
+        { status: 500 }
+      );
+    }
+
+    if (!databaseId) {
+      return NextResponse.json(
+        { error: 'NOTION_DATABASE_NOTICES is missing' },
+        { status: 500 }
+      );
+    }
+
+    console.log('Fetching from Notion...');
+    console.log('Database ID:', databaseId);
+
+    // Notion API 호출 (필터/정렬 없이 단순하게)
     const response = await fetch(
-      `https://api.notion.com/v1/databases/${databaseId}/query`, 
+      `https://api.notion.com/v1/databases/${databaseId}/query`,
       {
         method: 'POST',
         headers: {
@@ -26,47 +36,43 @@ export async function GET() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          page_size: 100, // 👈 6 → 100으로 증가
-          filter: {
-            property: 'Published',
-            checkbox: {
-              equals: true
-            }
-          },
-          sorts: [
-            {
-              property: 'Date',
-              direction: 'descending'
-            }
-          ]
+          page_size: 10
         }),
-        cache: 'no-store'
+        cache: 'no-store',
       }
     );
 
+    console.log('Response status:', response.status);
+
     if (!response.ok) {
-      throw new Error(`Notion API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Notion API Error Response:', errorText);
+      
+      return NextResponse.json(
+        { 
+          error: 'Notion API failed',
+          status: response.status,
+          message: errorText
+        },
+        { status: response.status }
+      );
     }
 
     const data = await response.json();
     
-    // 👇 데이터 정리 (사용하기 쉽게)
-    const notices = data.results.map((page: any) => ({
-      id: page.id,
-      title: page.properties.Title?.title?.[0]?.plain_text || '',
-      date: page.properties.Date?.date?.start || '',
-      category: page.properties.Category?.select?.name || '',
-      content: page.properties.Content?.rich_text?.[0]?.plain_text || '',
-      published: page.properties.Published?.checkbox || false,
-      pinned: page.properties.Pinned?.checkbox || false,
-    }));
+    console.log('Success! Results count:', data.results?.length || 0);
 
-    return NextResponse.json({ notices });
-    
+    // 원본 데이터 그대로 반환
+    return NextResponse.json(data);
+
   } catch (error) {
-    console.error('Notion API Error:', error);
+    console.error('Fatal Error:', error);
+    
     return NextResponse.json(
-      { error: 'Failed to fetch notices' }, 
+      { 
+        error: 'Server error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
