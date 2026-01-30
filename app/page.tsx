@@ -1,34 +1,49 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { 
   Laptop, HandHeart, FileText, ChevronRight, Copy, ShieldCheck, 
   Calendar, Download, Menu, X, Info, ChevronLeft, Users, 
-  MapPin, Target, BookOpen, Image as ImageIcon, MessageSquare
+  MapPin, Target, BookOpen, Image as ImageIcon, MessageSquare,
+  Bell, Megaphone
 } from 'lucide-react';
 
 export default function App() {
+  const [activities, setActivities] = useState<any[]>([]);
   const [notices, setNotices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showToast, setShowToast] = useState(false);
-  const [selectedNotice, setSelectedNotice] = useState<any>(null);
+  const [selectedActivity, setSelectedActivity] = useState<any>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // 노션 데이터 페칭 로직 (기존 성공 로직 유지)
+  // ✅ 공지사항 + 활동소식 동시 페칭
   useEffect(() => {
-    async function fetchNotionData() {
+    async function fetchData() {
       try {
-        const response = await fetch('/api/notices'); 
-        const data = await response.json();
-        if (data.results) {
-          const formatted = data.results.map((item: any) => ({
+        // 공지사항
+        const noticesRes = await fetch('/api/notices');
+        const noticesData = await noticesRes.json();
+        if (Array.isArray(noticesData)) {
+          setNotices(noticesData);
+        }
+
+        // 활동소식
+        const activitiesRes = await fetch('/api/activities');
+        const activitiesData = await activitiesRes.json();
+        if (Array.isArray(activitiesData)) {
+          const formatted = activitiesData.map((item: any) => ({
             id: item.id,
-            title: item.properties.제목?.title[0]?.plain_text || '내용 없음',
-            date: item.properties.날짜?.date?.start || '2026.01.23',
-            description: item.properties.설명?.rich_text.map((t: any) => t.plain_text).join('') || '',
-            images: item.properties.이미지?.files.map((f: any) => f.file?.url || f.external?.url) || []
+            title: item.title || '제목 없음',
+            date: item.date || '2026-01-23',
+            description: item.content || '',
+            images: item.photos || [],
+            program: item.program || '',
+            location: item.location || '',
+            participantCount: item.participantCount || 0,
+            tags: item.tags || []
           }));
-          setNotices(formatted);
+          setActivities(formatted);
         }
       } catch (error) {
         console.error('Data fetch error:', error);
@@ -36,12 +51,12 @@ export default function App() {
         setLoading(false);
       }
     }
-    fetchNotionData();
+    fetchData();
   }, []);
 
   useEffect(() => {
-    if (selectedNotice) setCurrentImageIndex(0);
-  }, [selectedNotice]);
+    if (selectedActivity) setCurrentImageIndex(0);
+  }, [selectedActivity]);
 
   const copyAcc = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -51,15 +66,15 @@ export default function App() {
 
   const nextImage = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!selectedNotice) return;
-    setCurrentImageIndex((prev) => (prev === selectedNotice.images.length - 1 ? 0 : prev + 1));
-  }, [selectedNotice]);
+    if (!selectedActivity) return;
+    setCurrentImageIndex((prev) => (prev === selectedActivity.images.length - 1 ? 0 : prev + 1));
+  }, [selectedActivity]);
 
   const prevImage = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!selectedNotice) return;
-    setCurrentImageIndex((prev) => (prev === 0 ? selectedNotice.images.length - 1 : prev - 1));
-  }, [selectedNotice]);
+    if (!selectedActivity) return;
+    setCurrentImageIndex((prev) => (prev === 0 ? selectedActivity.images.length - 1 : prev - 1));
+  }, [selectedActivity]);
 
   const getProxyUrl = (url: string) => {
     if (!url) return 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b';
@@ -67,7 +82,6 @@ export default function App() {
     return url;
   };
 
-  // Lovable 기반 메뉴 구조 정의 
   const navigation = [
     { name: '기관소개', sub: ['인사말', '미션과 비전', '연혁', '조직도', '오시는 길'] },
     { name: '사업소개', sub: ['IT 교육', '외국어 교육', '교육비 지원', '문화체험'] },
@@ -84,16 +98,16 @@ export default function App() {
         </div>
       )}
 
-      {/* 1. NAVIGATION: Lovable 스타일 드롭다운 구조 [cite: 268, 648] */}
+      {/* NAVIGATION */}
       <nav className="fixed w-full bg-white/90 backdrop-blur-xl z-50 border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6 h-24 flex justify-between items-center">
-          <div className="flex items-center space-x-4 cursor-pointer">
+          <Link href="/" className="flex items-center space-x-4 cursor-pointer">
             <div className="w-12 h-12 bg-orange-600 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-orange-200">S&J</div>
             <div className="flex flex-col">
               <span className="text-xl font-black tracking-tighter">S&J 희망나눔</span>
               <span className="text-[10px] text-orange-600 font-bold uppercase tracking-widest">Global Youth Education</span>
             </div>
-          </div>
+          </Link>
           
           <div className="hidden lg:flex space-x-8">
             {navigation.map((item) => (
@@ -113,7 +127,7 @@ export default function App() {
         </div>
       </nav>
 
-      {/* 2. HERO: Lovable 디자인 반영 */}
+      {/* HERO */}
       <section className="pt-56 pb-32 px-6 bg-gradient-to-b from-orange-50/50 to-white">
         <div className="max-w-7xl mx-auto text-center">
           <div className="inline-flex items-center space-x-2 px-4 py-2 bg-white text-orange-600 rounded-full text-[12px] font-black mb-10 shadow-sm border border-orange-100">
@@ -124,7 +138,7 @@ export default function App() {
             더 넓은 세상,<br /><span className="text-orange-600">더 밝은 미래</span>를 향해
           </h1>
           <p className="text-slate-500 text-xl mb-16 leading-relaxed max-w-2xl mx-auto font-medium">
-            우리는 환경이 꿈의 한계가 되지 않도록, IT 교육과 글로벌 지원을 통해 청소년들의 가능성을 현실로 바꿉니다. [cite: 5]
+            우리는 환경이 꿈의 한계가 되지 않도록, IT 교육과 글로벌 지원을 통해 청소년들의 가능성을 현실로 바꿉니다.
           </p>
           <div className="flex justify-center gap-6">
             <a href="#후원하기" className="bg-slate-900 text-white px-12 py-6 rounded-3xl font-black hover:bg-orange-600 transition shadow-2xl">동참하기</a>
@@ -133,7 +147,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* 3. CHAIRMAN MESSAGE: 이사장님 선택 Option 2 적용 */}
+      {/* CHAIRMAN MESSAGE */}
       <section id="인사말" className="py-32 px-6 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-24 items-center">
           <div className="relative">
@@ -141,7 +155,7 @@ export default function App() {
               <img src="/chairman_profile.jpg" alt="S&J 희망나눔 이사장" className="w-full h-full object-cover" />
             </div>
             <div className="absolute -bottom-10 -right-10 bg-orange-600 text-white p-12 rounded-[48px] shadow-2xl hidden md:block">
-              <p className="text-sm font-bold opacity-80 mb-2">Since 2016 [cite: 4]</p>
+              <p className="text-sm font-bold opacity-80 mb-2">Since 2016</p>
               <p className="text-2xl font-black">10년의 약속,<br />변함없는 동행</p>
             </div>
           </div>
@@ -151,7 +165,7 @@ export default function App() {
               환경이 꿈의 한계가 되지 않도록,<br />S&J가 청소년의 곁을 지킵니다.
             </h3>
             <div className="text-slate-600 text-lg leading-relaxed font-medium space-y-8">
-              <p>꿈을 마음껏 펼쳐야 할 청소년기에 가정환경의 어려움으로 스스로의 가능성을 닫는 아이들을 볼 때 가장 마음이 아픕니다. S&J희망나눔은 그런 아이들의 손을 잡고 밝은 미래로 나아가기 위해 설립되었습니다. [cite: 4, 5]</p>
+              <p>꿈을 마음껏 펼쳐야 할 청소년기에 가정환경의 어려움으로 스스로의 가능성을 닫는 아이들을 볼 때 가장 마음이 아픕니다. S&J희망나눔은 그런 아이들의 손을 잡고 밝은 미래로 나아가기 위해 설립되었습니다.</p>
               <p>지난 10년 동안 우리는 '청소년 글로벌 드림' 프로젝트를 통해 수많은 아이의 성장을 지켜보았습니다. 이제는 한 걸음 더 나아가, 급변하는 미래 사회에서 아이들이 소외되지 않도록 IT 교육과 인문학적 소양을 결합한 통합적 성장을 지원합니다.</p>
               <p>나눔은 또 다른 희망을 낳습니다. 아이들이 어려운 환경을 극복하고 당당한 사회의 일원으로 성장할 수 있도록 곁을 지키겠습니다.</p>
               <div className="pt-6 border-t border-slate-100 mt-10">
@@ -163,36 +177,119 @@ export default function App() {
         </div>
       </section>
 
-      {/* 4. NOTION FEED: 활동 소식 (실시간 연동) */}
+      {/* 📢 NOTICES SECTION (새로 추가) */}
+      <section id="공지사항" className="py-32 px-6 bg-white border-t border-slate-100">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
+            <div className="max-w-xl">
+              <h2 className="text-orange-600 font-black text-xs tracking-[0.2em] uppercase mb-4 italic flex items-center gap-2">
+                <Bell size={16} /> Important Announcements
+              </h2>
+              <h3 className="text-4xl font-black text-slate-900 tracking-tight">공지사항</h3>
+            </div>
+            <Link 
+              href="/notices"
+              className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-orange-600 transition-colors"
+            >
+              전체보기 <ChevronRight size={16} />
+            </Link>
+          </div>
+
+          <div className="space-y-4">
+            {loading ? (
+              [1, 2, 3].map(i => (
+                <div key={i} className="h-24 bg-slate-100 rounded-3xl animate-pulse"></div>
+              ))
+            ) : (
+              notices.slice(0, 3).map((notice) => (
+                <div 
+                  key={notice.id}
+                  className="group bg-white border border-slate-200 rounded-3xl p-8 hover:border-orange-500 hover:shadow-xl transition-all cursor-pointer"
+                >
+                  <div className="flex items-start justify-between gap-6">
+                    <div className="flex-grow">
+                      <div className="flex items-center gap-3 mb-3">
+                        {notice.pinned && (
+                          <span className="bg-orange-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                            고정
+                          </span>
+                        )}
+                        <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                          {notice.category}
+                        </span>
+                        <span className="text-slate-400 text-xs font-bold">
+                          {notice.date}
+                        </span>
+                      </div>
+                      <h4 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-orange-600 transition-colors">
+                        {notice.title}
+                      </h4>
+                      <p className="text-sm text-slate-500 line-clamp-2 font-medium leading-relaxed">
+                        {notice.content}
+                      </p>
+                    </div>
+                    <ChevronRight size={24} className="text-slate-300 group-hover:text-orange-600 transition-colors flex-shrink-0 mt-2" />
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* 📸 ACTIVITIES SECTION */}
       <section id="활동소식" className="py-32 px-6 bg-slate-50">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
             <div className="max-w-xl">
-              <h2 className="text-orange-600 font-black text-xs tracking-[0.2em] uppercase mb-4 italic">Recent Updates</h2>
+              <h2 className="text-orange-600 font-black text-xs tracking-[0.2em] uppercase mb-4 italic flex items-center gap-2">
+                <ImageIcon size={16} /> Recent Updates
+              </h2>
               <h3 className="text-4xl font-black text-slate-900 tracking-tight">현장의 생생한 희망 소식</h3>
             </div>
-            <div className="flex gap-2">
-               <div className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-orange-600 transition-colors cursor-pointer"><ChevronLeft /></div>
-               <div className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-orange-600 transition-colors cursor-pointer"><ChevronRight /></div>
-            </div>
+            <Link 
+              href="/activities"
+              className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-orange-600 transition-colors"
+            >
+              전체보기 <ChevronRight size={16} />
+            </Link>
           </div>
           
           <div className="grid md:grid-cols-3 gap-10">
             {loading ? (
               [1, 2, 3].map(i => <div key={i} className="aspect-[4/5] bg-slate-200 rounded-[48px] animate-pulse"></div>)
             ) : (
-              notices.slice(0, 3).map((n) => (
-                <div key={n.id} onClick={() => setSelectedNotice(n)} className="group bg-white rounded-[48px] overflow-hidden border border-slate-100 hover:border-orange-500 transition-all duration-500 shadow-sm hover:shadow-2xl cursor-pointer flex flex-col h-full">
+              activities.slice(0, 3).map((activity) => (
+                <div key={activity.id} onClick={() => setSelectedActivity(activity)} className="group bg-white rounded-[48px] overflow-hidden border border-slate-100 hover:border-orange-500 transition-all duration-500 shadow-sm hover:shadow-2xl cursor-pointer flex flex-col h-full">
                   <div className="aspect-[1.2/1] overflow-hidden relative">
-                    <img src={getProxyUrl(n.images[0])} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={n.title} />
+                    <img src={getProxyUrl(activity.images[0])} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={activity.title} />
+                    {activity.program && (
+                      <div className="absolute top-6 left-6 bg-orange-600 text-white px-4 py-2 rounded-full text-xs font-black">
+                        {activity.program}
+                      </div>
+                    )}
                   </div>
                   <div className="p-10 flex flex-col flex-grow">
-                    <p className="text-orange-600 text-[10px] font-black uppercase tracking-widest mb-4">News & Activity</p>
-                    <h4 className="text-xl font-bold mb-6 line-clamp-2 leading-snug tracking-tight group-hover:text-orange-600 transition-colors">{n.title}</h4>
-                    <p className="text-slate-500 text-sm line-clamp-3 mb-10 font-medium leading-relaxed">{n.description}</p>
-                    <div className="mt-auto flex items-center justify-between text-slate-400 text-[10px] font-bold uppercase tracking-widest pt-6 border-t border-slate-50">
-                      <span>Date: {n.date}</span>
-                      <ChevronRight size={16} />
+                    <p className="text-orange-600 text-[10px] font-black uppercase tracking-widest mb-4">Activity Report</p>
+                    <h4 className="text-xl font-bold mb-6 line-clamp-2 leading-snug tracking-tight group-hover:text-orange-600 transition-colors">{activity.title}</h4>
+                    <p className="text-slate-500 text-sm line-clamp-3 mb-10 font-medium leading-relaxed">{activity.description}</p>
+                    <div className="mt-auto space-y-3">
+                      {activity.location && (
+                        <div className="flex items-center text-slate-400 text-xs font-medium gap-2">
+                          <MapPin size={14} />
+                          <span className="truncate">{activity.location}</span>
+                        </div>
+                      )}
+                      {activity.participantCount > 0 && (
+                        <div className="flex items-center text-slate-400 text-xs font-medium gap-2">
+                          <Users size={14} />
+                          <span>{activity.participantCount}명 참여</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold uppercase tracking-widest pt-6 border-t border-slate-50">
+                        <span>Date: {activity.date}</span>
+                        <ChevronRight size={16} />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -202,12 +299,12 @@ export default function App() {
         </div>
       </section>
 
-      {/* 5. DONATE: 후원 안내 */}
+      {/* DONATE */}
       <section id="후원하기" className="py-32 px-6 bg-white">
         <div className="max-w-5xl mx-auto bg-slate-900 rounded-[80px] p-16 md:p-24 text-center text-white relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 right-0 w-64 h-64 bg-orange-600/20 blur-[100px] -mr-32 -mt-32"></div>
           <h2 className="text-4xl md:text-6xl font-black mb-12 tracking-tighter italic">"여러분의 나눔이<br />아이들의 미래가 됩니다"</h2>
-          <p className="text-slate-400 text-lg mb-20 max-w-xl mx-auto font-medium">사단법인 S&J 희망나눔은 지정기부금 단체로, 여러분의 소중한 후원금은 연말정산 시 세액공제 혜택을 받으실 수 있습니다. [cite: 4]</p>
+          <p className="text-slate-400 text-lg mb-20 max-w-xl mx-auto font-medium">사단법인 S&J 희망나눔은 지정기부금 단체로, 여러분의 소중한 후원금은 연말정산 시 세액공제 혜택을 받으실 수 있습니다.</p>
           
           <div className="grid md:grid-cols-2 gap-8 text-left">
             <div className="bg-white/5 border border-white/10 p-10 rounded-[48px] hover:bg-white/10 transition-colors">
@@ -228,7 +325,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* FOOTER [cite: 299, 968] */}
+      {/* FOOTER */}
       <footer className="py-24 px-6 border-t border-slate-100 bg-white">
         <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-20">
           <div className="md:col-span-2">
@@ -237,7 +334,7 @@ export default function App() {
               <span className="text-xl font-black tracking-tighter">S&J HOPE SHARING</span>
             </div>
             <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-sm mb-6">
-              대구광역시 북구 대학로 80 경북대학교 테크노파크 201호 [cite: 968]<br />
+              대구광역시 북구 대학로 80 경북대학교 테크노파크 201호<br />
               대표이사: 윤동성 | 고유번호: 000-00-00000<br />
               Tel: 053-000-0000 | Email: official@sj-hs.or.kr
             </p>
@@ -245,41 +342,79 @@ export default function App() {
           <div>
             <h5 className="text-slate-900 font-black text-[11px] uppercase tracking-widest mb-10">Quick Links</h5>
             <div className="flex flex-col gap-4 text-sm text-slate-400 font-bold">
+              <Link href="/notices" className="hover:text-orange-600 transition-colors">공지사항</Link>
+              <Link href="/activities" className="hover:text-orange-600 transition-colors">활동소식</Link>
               <a href="#" className="hover:text-orange-600 transition-colors">개인정보처리방침</a>
               <a href="#" className="hover:text-orange-600 transition-colors">이용약관</a>
-              <a href="#" className="hover:text-orange-600 transition-colors">국세청 공시 자료실</a>
             </div>
           </div>
         </div>
         <div className="max-w-7xl mx-auto pt-12 border-t border-slate-50 mt-20 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">
-          © 2026 S&J HOPE SHARING. ALL RIGHTS RESERVED. [cite: 968]
+          © 2026 S&J HOPE SHARING. ALL RIGHTS RESERVED.
         </div>
       </footer>
 
-      {/* 팝업 모달 (슬라이더 포함) - 기존 로직 유지 */}
-      {selectedNotice && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md transition-all" onClick={() => setSelectedNotice(null)}>
+      {/* ACTIVITY MODAL */}
+      {selectedActivity && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md transition-all" onClick={() => setSelectedActivity(null)}>
           <div className="bg-white w-full max-w-4xl rounded-[60px] shadow-2xl overflow-hidden animate-in zoom-in duration-300 relative max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setSelectedNotice(null)} className="absolute top-8 right-8 z-20 p-3 bg-white/80 rounded-full text-slate-400 hover:text-orange-600 transition-colors"><X size={28} /></button>
+            <button onClick={() => setSelectedActivity(null)} className="absolute top-8 right-8 z-20 p-3 bg-white/80 rounded-full text-slate-400 hover:text-orange-600 transition-colors"><X size={28} /></button>
             <div className="overflow-y-auto flex-grow p-10 md:p-16 custom-scrollbar">
-              {selectedNotice.images.length > 0 && (
+              {selectedActivity.images.length > 0 && (
                 <div className="relative aspect-video bg-slate-100 rounded-[40px] overflow-hidden mb-12 group">
-                  <img src={getProxyUrl(selectedNotice.images[currentImageIndex])} className="w-full h-full object-cover" alt="공지 이미지" />
-                  {selectedNotice.images.length > 1 && (
+                  <img src={getProxyUrl(selectedActivity.images[currentImageIndex])} className="w-full h-full object-cover" alt="활동 이미지" />
+                  {selectedActivity.images.length > 1 && (
                     <>
                       <button onClick={prevImage} className="absolute left-6 top-1/2 -translate-y-1/2 p-4 bg-white/90 rounded-full text-slate-700 hover:text-orange-600 opacity-0 group-hover:opacity-100 transition-all"><ChevronLeft size={24} /></button>
                       <button onClick={nextImage} className="absolute right-6 top-1/2 -translate-y-1/2 p-4 bg-white/90 rounded-full text-slate-700 hover:text-orange-600 opacity-0 group-hover:opacity-100 transition-all"><ChevronRight size={24} /></button>
+                      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/90 px-4 py-2 rounded-full text-xs font-bold">
+                        {currentImageIndex + 1} / {selectedActivity.images.length}
+                      </div>
                     </>
                   )}
                 </div>
               )}
-              <div className="flex items-center gap-2 text-orange-600 font-bold text-xs mb-6 uppercase tracking-widest"><Info size={16} /> News Detail</div>
-              <h2 className="text-4xl font-black text-slate-900 mb-8 leading-tight">{selectedNotice.title}</h2>
-              <div className="flex items-center text-slate-400 text-sm font-bold gap-4 mb-12 pb-12 border-b border-slate-100"><Calendar size={18} /> {selectedNotice.date}</div>
-              <div className="text-slate-600 leading-relaxed font-medium whitespace-pre-wrap text-xl">{selectedNotice.description}</div>
+              <div className="flex items-center gap-2 text-orange-600 font-bold text-xs mb-6 uppercase tracking-widest">
+                {selectedActivity.program && (
+                  <span className="bg-orange-100 px-3 py-1 rounded-full">{selectedActivity.program}</span>
+                )}
+                <Info size={16} />
+              </div>
+              <h2 className="text-4xl font-black text-slate-900 mb-8 leading-tight">{selectedActivity.title}</h2>
+              
+              <div className="grid grid-cols-2 gap-6 mb-12 pb-12 border-b border-slate-100">
+                <div className="flex items-center text-slate-400 text-sm font-bold gap-3">
+                  <Calendar size={18} />
+                  <span>{selectedActivity.date}</span>
+                </div>
+                {selectedActivity.location && (
+                  <div className="flex items-center text-slate-400 text-sm font-bold gap-3">
+                    <MapPin size={18} />
+                    <span>{selectedActivity.location}</span>
+                  </div>
+                )}
+                {selectedActivity.participantCount > 0 && (
+                  <div className="flex items-center text-slate-400 text-sm font-bold gap-3">
+                    <Users size={18} />
+                    <span>{selectedActivity.participantCount}명 참여</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="text-slate-600 leading-relaxed font-medium whitespace-pre-wrap text-xl mb-8">{selectedActivity.description}</div>
+              
+              {selectedActivity.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-8 border-t border-slate-100">
+                  {selectedActivity.tags.map((tag: string) => (
+                    <span key={tag} className="bg-slate-100 text-slate-600 px-4 py-2 rounded-full text-xs font-bold">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="p-10 bg-slate-50 flex justify-end">
-              <button onClick={() => setSelectedNotice(null)} className="bg-slate-900 text-white px-12 py-4 rounded-3xl font-bold hover:bg-orange-600 transition shadow-xl">닫기</button>
+              <button onClick={() => setSelectedActivity(null)} className="bg-slate-900 text-white px-12 py-4 rounded-3xl font-bold hover:bg-orange-600 transition shadow-xl">닫기</button>
             </div>
           </div>
         </div>
