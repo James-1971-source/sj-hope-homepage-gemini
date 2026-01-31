@@ -244,16 +244,7 @@ export default function ProgramsPage() {
                   </div>
                 )}
               </div>
-
-              {/* Notion 페이지 링크 */}
-              <a
-                href={selectedProgram.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold text-center hover:shadow-lg transition-all"
-              >
-                Notion에서 자세히 보기 →
-              </a>
+              
             </div>
           </div>
         </div>
