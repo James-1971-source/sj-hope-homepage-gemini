@@ -310,21 +310,7 @@ export default function NoticesPage() {
               <div className="text-slate-600 text-lg leading-relaxed font-medium whitespace-pre-wrap">
                 {selectedNotice.content}
               </div>
-
-              {/* Notion 링크 */}
-              {selectedNotice.url && (
-                <div className="mt-12 pt-8 border-t border-slate-100">
-                  <a
-                    href={selectedNotice.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-orange-600 font-bold hover:text-orange-700 transition-colors"
-                  >
-                    <span>Notion에서 보기</span>
-                    <ChevronRight size={18} />
-                  </a>
-                </div>
-              )}
+              
             </div>
 
             {/* 푸터 */}
