@@ -98,7 +98,7 @@ export default function App() {
         </div>
       )}
 
-      {/* NAVIGATION */}
+      {/* NAVIGATION - ✅ 프로그램 링크 추가됨 */}
       <nav className="fixed w-full bg-white/90 backdrop-blur-xl z-50 border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6 h-24 flex justify-between items-center">
           <Link href="/" className="flex items-center space-x-4 cursor-pointer">
@@ -177,7 +177,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* 📢 NOTICES SECTION (새로 추가) */}
+      {/* 📢 NOTICES SECTION */}
       <section id="공지사항" className="py-32 px-6 bg-white border-t border-slate-100">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
@@ -325,7 +325,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* FOOTER */}
+      {/* FOOTER - ✅ 프로그램 링크 추가됨 */}
       <footer className="py-24 px-6 border-t border-slate-100 bg-white">
         <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-20">
           <div className="md:col-span-2">
@@ -344,6 +344,7 @@ export default function App() {
             <div className="flex flex-col gap-4 text-sm text-slate-400 font-bold">
               <Link href="/notices" className="hover:text-orange-600 transition-colors">공지사항</Link>
               <Link href="/activities" className="hover:text-orange-600 transition-colors">활동소식</Link>
+              <Link href="/programs" className="hover:text-orange-600 transition-colors">프로그램</Link>
               <a href="#" className="hover:text-orange-600 transition-colors">개인정보처리방침</a>
               <a href="#" className="hover:text-orange-600 transition-colors">이용약관</a>
             </div>
@@ -422,3 +423,4 @@ export default function App() {
     </div>
   );
 }
+
