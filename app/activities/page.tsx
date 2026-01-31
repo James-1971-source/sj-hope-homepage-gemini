@@ -372,21 +372,7 @@ export default function ActivitiesPage() {
                   ))}
                 </div>
               )}
-
-              {/* Notion 링크 */}
-              {selectedActivity.url && (
-                <div className="pt-8 border-t border-slate-100">
-                  <a
-                    href={selectedActivity.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-orange-600 font-bold hover:text-orange-700 transition-colors"
-                  >
-                    <span>Notion에서 보기</span>
-                    <ChevronRight size={18} />
-                  </a>
-                </div>
-              )}
+              
             </div>
 
             {/* 푸터 */}
