@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, X, Users, Calendar, Target, ChevronDown } from 'lucide-react';
+import { ArrowLeft, X, Users, Calendar, Target } from 'lucide-react';
 
 interface Program {
   id: string;
@@ -81,7 +81,7 @@ export default function ProgramsPage() {
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               프로그램
             </h1>
-            <div className="w-20"></div> {/* 균형 맞추기 */}
+            <div className="w-20"></div>
           </div>
         </div>
       </header>
@@ -161,7 +161,7 @@ export default function ProgramsPage() {
                     )}
                   </div>
 
-                  {/* 자세히 보기 버튼 */}
+                  {/* ✅ 자세히 보기 버튼 (유지) */}
                   <button className="mt-4 w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all">
                     자세히 보기
                   </button>
@@ -244,7 +244,18 @@ export default function ProgramsPage() {
                   </div>
                 )}
               </div>
-              
+
+              {/* ❌ "Notion에서 자세히 보기" 버튼 제거됨 */}
+            </div>
+
+            {/* 모달 하단 */}
+            <div className="p-6 bg-gray-50 flex justify-end">
+              <button
+                onClick={() => setSelectedProgram(null)}
+                className="bg-gray-900 text-white px-12 py-4 rounded-2xl font-bold hover:bg-blue-600 transition-all shadow-lg"
+              >
+                닫기
+              </button>
             </div>
           </div>
         </div>
