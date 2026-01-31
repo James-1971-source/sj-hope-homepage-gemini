@@ -82,10 +82,19 @@ export default function App() {
     return url;
   };
 
+  // ✅ 네비게이션 구조 - '소식' 하위에 '프로그램' 추가
   const navigation = [
     { name: '기관소개', sub: ['인사말', '미션과 비전', '연혁', '조직도', '오시는 길'] },
     { name: '사업소개', sub: ['IT 교육', '외국어 교육', '교육비 지원', '문화체험'] },
-    { name: '소식', sub: ['공지사항', '활동소식', '언론보도'] },
+    { 
+      name: '소식', 
+      sub: [
+        { label: '공지사항', link: '/notices' },
+        { label: '활동소식', link: '/activities' },
+        { label: '프로그램', link: '/programs' },
+        { label: '언론보도', link: '#언론보도' }
+      ]
+    },
     { name: '참여', sub: ['후원하기', '자원봉사 신청'] },
     { name: '자료실', sub: ['성과보고서', '재무공시', '서식다운로드'] },
   ];
@@ -116,9 +125,30 @@ export default function App() {
                   {item.name} <ChevronRight size={14} className="rotate-90 group-hover:rotate-[270deg] transition-transform" />
                 </button>
                 <div className="absolute top-full left-0 w-48 bg-white border border-slate-100 shadow-xl rounded-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top scale-95 group-hover:scale-100">
-                  {item.sub.map((s) => (
-                    <a key={s} href={`#${s}`} className="block py-2 text-xs font-medium text-slate-500 hover:text-orange-600 hover:translate-x-1 transition-all">{s}</a>
-                  ))}
+                  {item.sub.map((s) => {
+                    // ✅ 객체인 경우 Link 컴포넌트 사용
+                    if (typeof s === 'object' && s.link) {
+                      return (
+                        <Link 
+                          key={s.label} 
+                          href={s.link} 
+                          className="block py-2 text-xs font-medium text-slate-500 hover:text-orange-600 hover:translate-x-1 transition-all"
+                        >
+                          {s.label}
+                        </Link>
+                      );
+                    }
+                    // ✅ 문자열인 경우 기존 방식 유지
+                    return (
+                      <a 
+                        key={s} 
+                        href={`#${s}`} 
+                        className="block py-2 text-xs font-medium text-slate-500 hover:text-orange-600 hover:translate-x-1 transition-all"
+                      >
+                        {s}
+                      </a>
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -325,7 +355,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* FOOTER - ✅ 프로그램 링크 추가됨 */}
+      {/* FOOTER */}
       <footer className="py-24 px-6 border-t border-slate-100 bg-white">
         <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-20">
           <div className="md:col-span-2">
@@ -423,4 +453,3 @@ export default function App() {
     </div>
   );
 }
-
