@@ -16,6 +16,7 @@ export default function App() {
   const [showToast, setShowToast] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<any>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [chairmanImage, setChairmanImage] = useState<string>('/chairman_profile.jpg');
 
   // ✅ 공지사항 + 활동소식 동시 페칭
   useEffect(() => {
@@ -44,6 +45,12 @@ export default function App() {
             tags: item.tags || []
           }));
           setActivities(formatted);
+        }
+        // ✅ 이사장 프로필 이미지
+        const aboutRes = await fetch('/api/about');
+        const aboutData = await aboutRes.json();
+        if (aboutData.chairmanImage) {
+          setChairmanImage(aboutData.chairmanImage);
         }
       } catch (error) {
         console.error('Data fetch error:', error);
@@ -307,7 +314,8 @@ export default function App() {
               activities.slice(0, 3).map((activity) => (
                 <div key={activity.id} onClick={() => setSelectedActivity(activity)} className="group bg-white rounded-[48px] overflow-hidden border border-slate-100 hover:border-orange-500 transition-all duration-500 shadow-sm hover:shadow-2xl cursor-pointer flex flex-col h-full">
                   <div className="aspect-[1.2/1] overflow-hidden relative">
-                    <img src={getProxyUrl(activity.images[0])} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={activity.title} />
+                    // ✅ 이미지 태그 수정
+                    <img src={getProxyUrl(chairmanImage)} alt="S&J 희망나눔 이사장" className="w-full h-full object-cover" onError={(e) => {e.currentTarget.src = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800';}}/>
                     {activity.program && (
                       <div className="absolute top-6 left-6 bg-orange-600 text-white px-4 py-2 rounded-full text-xs font-black">
                         {activity.program}
