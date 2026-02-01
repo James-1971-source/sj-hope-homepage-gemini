@@ -1,512 +1,703 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Menu, X, ChevronDown, Heart, Users, BookOpen, Award, Calendar, MapPin, UserCheck, Tag } from 'lucide-react';
 import Link from 'next/link';
-import { 
-  Laptop, HandHeart, FileText, ChevronRight, Copy, ShieldCheck, 
-  Calendar, Download, Menu, X, Info, ChevronLeft, Users, 
-  MapPin, Target, BookOpen, Image as ImageIcon, MessageSquare,
-  Bell, Megaphone
-} from 'lucide-react';
+import Image from 'next/image';
 
-export default function App() {
-  const [activities, setActivities] = useState<any[]>([]);
-  const [notices, setNotices] = useState<any[]>([]);
-  const [chairmanImage, setChairmanImage] = useState<string>('https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800');
-  const [loading, setLoading] = useState(true);
-  const [showToast, setShowToast] = useState(false);
-  const [selectedActivity, setSelectedActivity] = useState<any>(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+interface Notice {
+  id: string;
+  title: string;
+  date: string;
+  category: string;
+}
+
+interface Activity {
+  id: string;
+  title: string;
+  date: string;
+  description: string;
+  images: string[];
+  program: string;
+  location: string;
+  participantCount: number;
+  tags: string[];
+}
+
+export default function Home() {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [chairmanImage, setChairmanImage] = useState('/chairman_profile.jpg');
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [showActivityDetail, setShowActivityDetail] = useState(false);
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const noticesRes = await fetch('/api/notices');
-        const noticesData = await noticesRes.json();
-        if (Array.isArray(noticesData)) {
-          setNotices(noticesData);
-        }
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-        const activitiesRes = await fetch('/api/activities');
-        const activitiesData = await activitiesRes.json();
-        if (Array.isArray(activitiesData)) {
-          const formatted = activitiesData.map((item: any) => ({
+  useEffect(() => {
+    fetch('/api/notices')
+      .then(res => res.json())
+      .then(data => {
+        if (data.length > 0) {
+          setNotices(data.slice(0, 3));
+        }
+      })
+      .catch(err => console.error('Failed to fetch notices:', err));
+
+    fetch('/api/activities')
+      .then(res => res.json())
+      .then(data => {
+        if (data.length > 0) {
+          const formattedActivities = data.slice(0, 3).map((item: any) => ({
             id: item.id,
             title: item.title || '제목 없음',
-            date: item.date || '2026-01-23',
+            date: item.date || '날짜 미정',
             description: item.content || '',
-            images: item.photos || [],
+            images: item.images || [],
             program: item.program || '',
             location: item.location || '',
             participantCount: item.participantCount || 0,
             tags: item.tags || []
           }));
-          setActivities(formatted);
+          setActivities(formattedActivities);
         }
+      })
+      .catch(err => console.error('Failed to fetch activities:', err));
 
-        try {
-          const aboutRes = await fetch('/api/about');
-          const aboutData = await aboutRes.json();
-          if (aboutData.chairmanImage) {
-            const notionImage = aboutData.chairmanImage;
-            if (notionImage.includes('amazonaws.com') || notionImage.includes('s3.')) {
-              setChairmanImage(`/api/proxy?url=${encodeURIComponent(notionImage)}`);
-            } else {
-              setChairmanImage(notionImage);
-            }
-          }
-        } catch (error) {
-          console.log('⚠️ 이사장 이미지를 불러올 수 없습니다. 기본 이미지를 사용합니다.');
+    fetch('/api/about')
+      .then(res => res.json())
+      .then(data => {
+        if (data.chairmanImage) {
+          const imageUrl = data.chairmanImage.startsWith('http') && data.chairmanImage.includes('amazonaws.com')
+            ? `/api/proxy?url=${encodeURIComponent(data.chairmanImage)}`
+            : data.chairmanImage;
+          setChairmanImage(imageUrl);
         }
-      } catch (error) {
-        console.error('Data fetch error:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
+      })
+      .catch(err => console.error('Failed to fetch chairman info:', err));
   }, []);
 
-  useEffect(() => {
-    if (selectedActivity) setCurrentImageIndex(0);
-  }, [selectedActivity]);
-
-  const copyAcc = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
-  };
-
-  const nextImage = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!selectedActivity) return;
-    setCurrentImageIndex((prev) => (prev === selectedActivity.images.length - 1 ? 0 : prev + 1));
-  }, [selectedActivity]);
-
-  const prevImage = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!selectedActivity) return;
-    setCurrentImageIndex((prev) => (prev === 0 ? selectedActivity.images.length - 1 : prev - 1));
-  }, [selectedActivity]);
-
   const getActivityProxyUrl = (url: string) => {
-    if (!url) return 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b';
-    if (url.includes('amazonaws.com')) return `/api/proxy?url=${encodeURIComponent(url)}`;
+    if (url && url.startsWith('http') && url.includes('amazonaws.com')) {
+      return `/api/proxy?url=${encodeURIComponent(url)}`;
+    }
     return url;
   };
 
   const navigation = [
-    { name: '기관소개', sub: ['인사말', '미션과 비전', '연혁', '조직도', '오시는 길'] },
-    { name: '사업소개', sub: ['IT 교육', '외국어 교육', '교육비 지원', '문화체험'] },
-    { 
-      name: '소식', 
-      sub: [
-        { label: '공지사항', link: '/notices' },
-        { label: '활동소식', link: '/activities' },
-        { label: '프로그램', link: '/programs' },
-        { label: '언론보도', link: '#언론보도' }
-      ]
-    },
-    { name: '참여', sub: ['후원하기', '자원봉사 신청'] },
-    { name: '자료실', sub: ['성과보고서', '재무공시', '서식다운로드'] },
+    { name: '소개', href: '#소개', sub: ['인사말', '설립목적', '주요사업', '연혁', '조직도', '찾아오시는 길'] },
+    { name: '소식', href: '#소식', sub: [
+      { name: '공지사항', href: '/notices' },
+      { name: '활동소식', href: '/activities' },
+      { name: '프로그램', href: '/programs' },
+      '언론보도'
+    ]},
+    { name: '후원', href: '#후원', sub: ['후원안내', '후원신청', '후원자 명단'] },
+    { name: '참여', href: '#참여', sub: ['봉사활동 신청', 'FAQ', '문의하기'] },
   ];
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-orange-100">
-      {showToast && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[1000] bg-slate-900 text-white px-6 py-3 rounded-full font-bold shadow-2xl text-sm">
-          ✅ 계좌번호가 복사되었습니다!
-        </div>
-      )}
-
-      {/* ✅ NAVIGATION - CI 컬러 적용 */}
-      <nav className="fixed w-full bg-white/90 backdrop-blur-xl z-50 border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-6 h-24 flex justify-between items-center">
-          {/* ✅ 로고 이미지로 교체 */}
-          <Link href="/" className="flex items-center space-x-3 cursor-pointer">
-            <img 
-              src="https://www.genspark.ai/api/files/s/SmiX95Zu" 
-              alt="S&J 희망나눔" 
-              className="h-14 w-auto"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                if (fallback) fallback.style.display = 'flex';
-              }}
-            />
-            {/* Fallback */}
-            <div className="hidden items-center space-x-3">
-              <div className="w-12 h-12 bg-[#F79332] rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg">S&J</div>
-              <div className="flex flex-col">
-                <span className="text-xl font-black tracking-tighter text-[#6C6E70]">S&J 희망나눔</span>
-                <span className="text-[10px] text-[#F79332] font-bold uppercase tracking-widest">Global Youth Education</span>
-              </div>
+    <div className="min-h-screen bg-white">
+      {/* Navigation */}
+      <nav className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-lg' : 'bg-white/90 backdrop-blur-sm'}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
+            {/* Logo */}
+            <div className="flex-shrink-0">
+              <Link href="/">
+                <Image 
+                  src="/sj-hope-logo.png" 
+                  alt="S&J 희망나눔" 
+                  width={180}
+                  height={60}
+                  className="h-12 w-auto object-contain"
+                  priority
+                />
+              </Link>
             </div>
-          </Link>
-          
-          <div className="hidden lg:flex space-x-8">
-            {navigation.map((item) => (
-              <div key={item.name} className="relative group py-8">
-                <button className="text-sm font-bold text-[#6C6E70] group-hover:text-[#F79332] transition-colors flex items-center gap-1">
-                  {item.name} <ChevronRight size={14} className="rotate-90 group-hover:rotate-[270deg] transition-transform" />
-                </button>
-                <div className="absolute top-full left-0 w-48 bg-white border border-slate-100 shadow-xl rounded-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top scale-95 group-hover:scale-100">
-                  {item.sub.map((s) => {
-                    if (typeof s === 'object' && s.link) {
-                      return (
-                        <Link 
-                          key={s.label} 
-                          href={s.link} 
-                          className="block py-2 text-xs font-medium text-[#A6A9AB] hover:text-[#F79332] hover:translate-x-1 transition-all"
-                        >
-                          {s.label}
-                        </Link>
-                      );
-                    }
-                    return (
-                      <a 
-                        key={s} 
-                        href={`#${s}`} 
-                        className="block py-2 text-xs font-medium text-[#A6A9AB] hover:text-[#F79332] hover:translate-x-1 transition-all"
-                      >
-                        {s}
-                      </a>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-          <a href="#후원하기" className="bg-[#F79332] text-white px-8 py-3 rounded-full text-xs font-black hover:bg-[#E58422] transition shadow-lg">정기후원 신청</a>
-        </div>
-      </nav>
 
-      {/* ✅ HERO - CI 컬러 적용 */}
-      <section className="pt-56 pb-32 px-6 bg-gradient-to-b from-orange-50/30 to-white">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="inline-flex items-center space-x-2 px-4 py-2 bg-white text-[#F79332] rounded-full text-[12px] font-black mb-10 shadow-sm border border-orange-100">
-            <span className="w-2 h-2 bg-[#F79332] rounded-full animate-pulse"></span>
-            <span>2026 S&J 희망나눔: 청소년과 함께하는 디지털 동행</span>
-          </div>
-          <h1 className="text-6xl md:text-8xl font-black leading-[1.05] mb-12 tracking-tighter text-[#6C6E70]">
-            더 넓은 세상,<br /><span className="text-[#F79332]">더 밝은 미래</span>를 향해
-          </h1>
-          <p className="text-[#A6A9AB] text-xl mb-16 leading-relaxed max-w-2xl mx-auto font-medium">
-            우리는 환경이 꿈의 한계가 되지 않도록, IT 교육과 글로벌 지원을 통해 청소년들의 가능성을 현실로 바꿉니다.
-          </p>
-          <div className="flex justify-center gap-6">
-            <a href="#후원하기" className="bg-[#6C6E70] text-white px-12 py-6 rounded-3xl font-black hover:bg-[#F79332] transition shadow-2xl">동참하기</a>
-            <a href="#인사말" className="bg-white text-[#6C6E70] border-2 border-[#A6A9AB] px-12 py-6 rounded-3xl font-black hover:bg-slate-50 transition">기관 소개</a>
-          </div>
-        </div>
-      </section>
-
-      {/* ✅ CHAIRMAN MESSAGE - 뱃지 위치 중간으로 이동 + CI 컬러 */}
-      <section id="인사말" className="py-16 px-6 bg-white overflow-hidden">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-[auto_1fr] gap-16 items-center">
-          {/* ✅ 이미지 + 뱃지 영역 */}
-          <div className="relative flex flex-col items-center lg:items-start">
-            {/* 이미지 */}
-            <div className="w-[280px] aspect-[3/4] bg-gradient-to-br from-slate-200 to-slate-300 rounded-[40px] overflow-hidden shadow-2xl">
-              <img 
-                src={chairmanImage}
-                alt="S&J 희망나눔 이사장" 
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  console.error('이사장 이미지 로드 실패');
-                  e.currentTarget.src = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800';
-                }}
-              />
-            </div>
-            
-            {/* ✅ 뱃지를 이미지 옆으로 이동 (중간 위치) */}
-            <div className="mt-8 lg:mt-0 lg:ml-8 lg:self-center bg-[#F79332] text-white p-8 rounded-[32px] shadow-2xl">
-              <p className="text-xs font-bold opacity-90 mb-2 text-center">Since 2016</p>
-              <p className="text-lg font-black leading-tight text-center whitespace-nowrap">
-                10년의 약속,<br />변함없는 동행
-              </p>
-            </div>
-          </div>
-          
-          {/* ✅ 텍스트 영역 - CI 컬러 */}
-          <div>
-            <h2 className="text-[#F79332] font-black text-[10px] tracking-widest uppercase mb-3">Chairman's Message</h2>
-            <h3 className="text-3xl md:text-4xl font-black text-[#6C6E70] mb-6 leading-tight">
-              환경이 꿈의 한계가 되지 않도록,<br />S&J가 청소년의 곁을 지킵니다.
-            </h3>
-            <div className="text-[#6C6E70] text-sm md:text-base leading-relaxed font-medium space-y-5">
-              <p>꿈을 마음껏 펼쳐야 할 청소년기에 가정환경의 어려움으로 스스로의 가능성을 닫는 아이들을 볼 때 가장 마음이 아픕니다. S&J희망나눔은 그런 아이들의 손을 잡고 밝은 미래로 나아가기 위해 설립되었습니다.</p>
-              <p>지난 10년 동안 우리는 '청소년 글로벌 드림' 프로젝트를 통해 수많은 아이의 성장을 지켜보았습니다. 이제는 한 걸음 더 나아가, 급변하는 미래 사회에서 아이들이 소외되지 않도록 IT 교육과 인문학적 소양을 결합한 통합적 성장을 지원합니다.</p>
-              <p>나눔은 또 다른 희망을 낳습니다. 아이들이 어려운 환경을 극복하고 당당한 사회의 일원으로 성장할 수 있도록 곁을 지키겠습니다.</p>
-              <div className="pt-4 border-t border-slate-100 mt-6">
-                <p className="text-[#A6A9AB] text-[10px] font-bold mb-2 uppercase tracking-widest">Chairman of S&J Hope Sharing</p>
-                <p className="text-lg md:text-xl font-black text-[#6C6E70] underline decoration-[#F79332] decoration-4 underline-offset-8">이사장 윤 동 성</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ✅ NOTICES SECTION - CI 컬러 */}
-      <section id="공지사항" className="py-32 px-6 bg-white border-t border-slate-100">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
-            <div className="max-w-xl">
-              <h2 className="text-[#F79332] font-black text-xs tracking-[0.2em] uppercase mb-4 italic flex items-center gap-2">
-                <Bell size={16} /> Important Announcements
-              </h2>
-              <h3 className="text-4xl font-black text-[#6C6E70] tracking-tight">공지사항</h3>
-            </div>
-            <Link 
-              href="/notices"
-              className="flex items-center gap-2 text-sm font-bold text-[#A6A9AB] hover:text-[#F79332] transition-colors"
-            >
-              전체보기 <ChevronRight size={16} />
-            </Link>
-          </div>
-
-          <div className="space-y-4">
-            {loading ? (
-              [1, 2, 3].map(i => (
-                <div key={i} className="h-24 bg-slate-100 rounded-3xl animate-pulse"></div>
-              ))
-            ) : (
-              notices.slice(0, 3).map((notice) => (
-                <div 
-                  key={notice.id}
-                  className="group bg-white border border-slate-200 rounded-3xl p-8 hover:border-[#F79332] hover:shadow-xl transition-all cursor-pointer"
-                >
-                  <div className="flex items-start justify-between gap-6">
-                    <div className="flex-grow">
-                      <div className="flex items-center gap-3 mb-3">
-                        {notice.pinned && (
-                          <span className="bg-[#F79332] text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
-                            고정
-                          </span>
-                        )}
-                        <span className="bg-orange-100 text-[#F79332] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
-                          {notice.category}
-                        </span>
-                        <span className="text-[#A6A9AB] text-xs font-bold">
-                          {notice.date}
-                        </span>
-                      </div>
-                      <h4 className="text-xl font-bold text-[#6C6E70] mb-3 group-hover:text-[#F79332] transition-colors">
-                        {notice.title}
-                      </h4>
-                      <p className="text-sm text-[#A6A9AB] line-clamp-2 font-medium leading-relaxed">
-                        {notice.content}
-                      </p>
-                    </div>
-                    <ChevronRight size={24} className="text-slate-300 group-hover:text-[#F79332] transition-colors flex-shrink-0 mt-2" />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ✅ ACTIVITIES SECTION - CI 컬러 */}
-      <section id="활동소식" className="py-32 px-6 bg-slate-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
-            <div className="max-w-xl">
-              <h2 className="text-[#F79332] font-black text-xs tracking-[0.2em] uppercase mb-4 italic flex items-center gap-2">
-                <ImageIcon size={16} /> Recent Updates
-              </h2>
-              <h3 className="text-4xl font-black text-[#6C6E70] tracking-tight">현장의 생생한 희망 소식</h3>
-            </div>
-            <Link 
-              href="/activities"
-              className="flex items-center gap-2 text-sm font-bold text-[#A6A9AB] hover:text-[#F79332] transition-colors"
-            >
-              전체보기 <ChevronRight size={16} />
-            </Link>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-10">
-            {loading ? (
-              [1, 2, 3].map(i => <div key={i} className="aspect-[4/5] bg-slate-200 rounded-[48px] animate-pulse"></div>)
-            ) : (
-              activities.slice(0, 3).map((activity) => (
-                <div key={activity.id} onClick={() => setSelectedActivity(activity)} className="group bg-white rounded-[48px] overflow-hidden border border-slate-100 hover:border-[#F79332] transition-all duration-500 shadow-sm hover:shadow-2xl cursor-pointer flex flex-col h-full">
-                  <div className="aspect-[1.2/1] overflow-hidden relative">
-                    <img 
-                      src={getActivityProxyUrl(activity.images[0])} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-                      alt={activity.title}
-                      onError={(e) => {
-                        console.error('활동소식 이미지 로드 실패:', activity.images[0]);
-                        e.currentTarget.src = 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800';
-                      }}
-                    />
-                    {activity.program && (
-                      <div className="absolute top-6 left-6 bg-[#F79332] text-white px-4 py-2 rounded-full text-xs font-black">
-                        {activity.program}
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-10 flex flex-col flex-grow">
-                    <p className="text-[#F79332] text-[10px] font-black uppercase tracking-widest mb-4">Activity Report</p>
-                    <h4 className="text-xl font-bold mb-6 line-clamp-2 leading-snug tracking-tight text-[#6C6E70] group-hover:text-[#F79332] transition-colors">{activity.title}</h4>
-                    <p className="text-[#A6A9AB] text-sm line-clamp-3 mb-10 font-medium leading-relaxed">{activity.description}</p>
-                    <div className="mt-auto space-y-3">
-                      {activity.location && (
-                        <div className="flex items-center text-[#A6A9AB] text-xs font-medium gap-2">
-                          <MapPin size={14} />
-                          <span className="truncate">{activity.location}</span>
-                        </div>
-                      )}
-                      {activity.participantCount > 0 && (
-                        <div className="flex items-center text-[#A6A9AB] text-xs font-medium gap-2">
-                          <Users size={14} />
-                          <span>{activity.participantCount}명 참여</span>
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between text-[#A6A9AB] text-[10px] font-bold uppercase tracking-widest pt-6 border-t border-slate-50">
-                        <span>Date: {activity.date}</span>
-                        <ChevronRight size={16} />
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex space-x-8">
+              {navigation.map((item) => (
+                <div key={item.name} className="relative group">
+                  <a
+                    href={item.href}
+                    className="text-gray-700 hover:text-[#F79332] px-3 py-2 text-sm font-medium transition-colors"
+                  >
+                    {item.name}
+                    {item.sub && <ChevronDown className="inline ml-1 h-4 w-4" />}
+                  </a>
+                  {item.sub && (
+                    <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                      <div className="py-2">
+                        {item.sub.map((subItem) => {
+                          if (typeof subItem === 'object') {
+                            return (
+                              <Link
+                                key={subItem.name}
+                                href={subItem.href}
+                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-[#F79332]/10 hover:text-[#F79332]"
+                              >
+                                {subItem.name}
+                              </Link>
+                            );
+                          }
+                          return (
+                            <a
+                              key={subItem}
+                              href={`#${subItem}`}
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-[#F79332]/10 hover:text-[#F79332]"
+                            >
+                              {subItem}
+                            </a>
+                          );
+                        })}
                       </div>
                     </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ✅ DONATE - CI 컬러 */}
-      <section id="후원하기" className="py-32 px-6 bg-white">
-        <div className="max-w-5xl mx-auto bg-[#6C6E70] rounded-[80px] p-16 md:p-24 text-center text-white relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#F79332]/20 blur-[100px] -mr-32 -mt-32"></div>
-          <h2 className="text-4xl md:text-6xl font-black mb-12 tracking-tighter italic relative z-10">"여러분의 나눔이<br />아이들의 미래가 됩니다"</h2>
-          <p className="text-[#A6A9AB] text-lg mb-20 max-w-xl mx-auto font-medium relative z-10">사단법인 S&J 희망나눔은 지정기부금 단체로, 여러분의 소중한 후원금은 연말정산 시 세액공제 혜택을 받으실 수 있습니다.</p>
-          
-          <div className="grid md:grid-cols-2 gap-8 text-left relative z-10">
-            <div className="bg-white/5 border border-white/10 p-10 rounded-[48px] hover:bg-white/10 transition-colors">
-              <span className="text-[#F79332] text-[10px] font-black uppercase tracking-[0.3em] mb-4 block">하나은행 (사단법인 에스앤제이)</span>
-              <div className="flex items-center justify-between">
-                <p className="text-2xl font-black tracking-tight">123-456789-01234</p>
-                <button onClick={() => copyAcc('123-456789-01234')} className="p-3 bg-white text-[#6C6E70] rounded-2xl hover:bg-[#F79332] hover:text-white transition"><Copy size={20} /></button>
-              </div>
-            </div>
-            <div className="bg-white/5 border border-white/10 p-10 rounded-[48px] hover:bg-white/10 transition-colors">
-              <span className="text-[#F79332] text-[10px] font-black uppercase tracking-[0.3em] mb-4 block">대구은행 (사단법인 에스앤제이)</span>
-              <div className="flex items-center justify-between">
-                <p className="text-2xl font-black tracking-tight">10-20-304050-6</p>
-                <button onClick={() => copyAcc('10-20-304050-6')} className="p-3 bg-white text-[#6C6E70] rounded-2xl hover:bg-[#F79332] hover:text-white transition"><Copy size={20} /></button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ✅ FOOTER - 로고 추가 + CI 컬러 */}
-      <footer className="py-24 px-6 border-t border-slate-100 bg-white">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-20">
-          <div className="md:col-span-2">
-            <div className="flex items-center space-x-3 mb-10">
-              <img 
-                src="https://www.genspark.ai/api/files/s/6lA4bGKZ" 
-                alt="S&J Hope Sharing" 
-                className="h-12 w-auto"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                  if (fallback) fallback.style.display = 'block';
-                }}
-              />
-              <span className="hidden text-xl font-black tracking-tighter text-[#6C6E70]">S&J HOPE SHARING</span>
-            </div>
-            <p className="text-[#A6A9AB] text-sm font-medium leading-relaxed max-w-sm mb-6">
-              대구광역시 북구 대학로 80 경북대학교 테크노파크 201호<br />
-              대표이사: 윤동성 | 고유번호: 000-00-00000<br />
-              Tel: 053-000-0000 | Email: official@sj-hs.or.kr
-            </p>
-          </div>
-          <div>
-            <h5 className="text-[#6C6E70] font-black text-[11px] uppercase tracking-widest mb-10">Quick Links</h5>
-            <div className="flex flex-col gap-4 text-sm text-[#A6A9AB] font-bold">
-              <Link href="/notices" className="hover:text-[#F79332] transition-colors">공지사항</Link>
-              <Link href="/activities" className="hover:text-[#F79332] transition-colors">활동소식</Link>
-              <Link href="/programs" className="hover:text-[#F79332] transition-colors">프로그램</Link>
-              <a href="#" className="hover:text-[#F79332] transition-colors">개인정보처리방침</a>
-              <a href="#" className="hover:text-[#F79332] transition-colors">이용약관</a>
-            </div>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto pt-12 border-t border-slate-50 mt-20 text-[10px] font-black text-[#A6A9AB] uppercase tracking-[0.3em]">
-          © 2026 S&J HOPE SHARING. ALL RIGHTS RESERVED.
-        </div>
-      </footer>
-
-      {/* ACTIVITY MODAL - CI 컬러 */}
-      {selectedActivity && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md transition-all" onClick={() => setSelectedActivity(null)}>
-          <div className="bg-white w-full max-w-4xl rounded-[60px] shadow-2xl overflow-hidden animate-in zoom-in duration-300 relative max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setSelectedActivity(null)} className="absolute top-8 right-8 z-20 p-3 bg-white/80 rounded-full text-[#A6A9AB] hover:text-[#F79332] transition-colors"><X size={28} /></button>
-            <div className="overflow-y-auto flex-grow p-10 md:p-16 custom-scrollbar">
-              {selectedActivity.images.length > 0 && (
-                <div className="relative aspect-video bg-slate-100 rounded-[40px] overflow-hidden mb-12 group">
-                  <img src={getActivityProxyUrl(selectedActivity.images[currentImageIndex])} className="w-full h-full object-cover" alt="활동 이미지" />
-                  {selectedActivity.images.length > 1 && (
-                    <>
-                      <button onClick={prevImage} className="absolute left-6 top-1/2 -translate-y-1/2 p-4 bg-white/90 rounded-full text-[#6C6E70] hover:text-[#F79332] opacity-0 group-hover:opacity-100 transition-all"><ChevronLeft size={24} /></button>
-                      <button onClick={nextImage} className="absolute right-6 top-1/2 -translate-y-1/2 p-4 bg-white/90 rounded-full text-[#6C6E70] hover:text-[#F79332] opacity-0 group-hover:opacity-100 transition-all"><ChevronRight size={24} /></button>
-                      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/90 px-4 py-2 rounded-full text-xs font-bold text-[#6C6E70]">
-                        {currentImageIndex + 1} / {selectedActivity.images.length}
-                      </div>
-                    </>
                   )}
                 </div>
-              )}
-              <div className="flex items-center gap-2 text-[#F79332] font-bold text-xs mb-6 uppercase tracking-widest">
-                {selectedActivity.program && (
-                  <span className="bg-orange-100 px-3 py-1 rounded-full">{selectedActivity.program}</span>
-                )}
-                <Info size={16} />
-              </div>
-              <h2 className="text-4xl font-black text-[#6C6E70] mb-8 leading-tight">{selectedActivity.title}</h2>
-              
-              <div className="grid grid-cols-2 gap-6 mb-12 pb-12 border-b border-slate-100">
-                <div className="flex items-center text-[#A6A9AB] text-sm font-bold gap-3">
-                  <Calendar size={18} />
-                  <span>{selectedActivity.date}</span>
-                </div>
-                {selectedActivity.location && (
-                  <div className="flex items-center text-[#A6A9AB] text-sm font-bold gap-3">
-                    <MapPin size={18} />
-                    <span>{selectedActivity.location}</span>
-                  </div>
-                )}
-                {selectedActivity.participantCount > 0 && (
-                  <div className="flex items-center text-[#A6A9AB] text-sm font-bold gap-3">
-                    <Users size={18} />
-                    <span>{selectedActivity.participantCount}명 참여</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="text-[#6C6E70] leading-relaxed font-medium whitespace-pre-wrap text-xl mb-8">{selectedActivity.description}</div>
-              
-              {selectedActivity.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-8 border-t border-slate-100">
-                  {selectedActivity.tags.map((tag: string) => (
-                    <span key={tag} className="bg-slate-100 text-[#6C6E70] px-4 py-2 rounded-full text-xs font-bold">
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
+              ))}
             </div>
-            <div className="p-10 bg-slate-50 flex justify-end">
-              <button onClick={() => setSelectedActivity(null)} className="bg-[#6C6E70] text-white px-12 py-4 rounded-3xl font-bold hover:bg-[#F79332] transition shadow-xl">닫기</button>
+
+            {/* Mobile menu button */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="text-gray-700 hover:text-[#F79332]"
+              >
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Mobile Navigation */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-white border-t">
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              {navigation.map((item) => (
+                <div key={item.name}>
+                  <a
+                    href={item.href}
+                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-[#F79332] hover:bg-gray-50"
+                  >
+                    {item.name}
+                  </a>
+                  {item.sub && (
+                    <div className="pl-4">
+                      {item.sub.map((subItem) => {
+                        if (typeof subItem === 'object') {
+                          return (
+                            <Link
+                              key={subItem.name}
+                              href={subItem.href}
+                              className="block px-3 py-2 text-sm text-gray-600 hover:text-[#F79332]"
+                            >
+                              {subItem.name}
+                            </Link>
+                          );
+                        }
+                        return (
+                          <a
+                            key={subItem}
+                            href={`#${subItem}`}
+                            className="block px-3 py-2 text-sm text-gray-600 hover:text-[#F79332]"
+                          >
+                            {subItem}
+                          </a>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </nav>
+
+      {/* Hero Section */}
+      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920"
+            alt="Hero Background"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#F79332]/90 to-[#F79332]/70" />
+        </div>
+        
+        <div className="relative z-10 text-center text-white px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <h1 className="text-5xl md:text-7xl font-bold mb-6">
+              함께 만드는<br />희망찬 내일
+            </h1>
+            <p className="text-xl md:text-2xl mb-8 text-white/90">
+              사단법인 S&J희망나눔과 함께하는 따뜻한 동행
+            </p>
+            <button className="bg-white text-[#F79332] px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-100 transition-all transform hover:scale-105">
+              후원하기
+            </button>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Notices Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">공지사항</h2>
+            <p className="text-xl text-[#A6A9AB]">최신 소식을 확인하세요</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {notices.length > 0 ? (
+              notices.map((notice, index) => (
+                <motion.div
+                  key={notice.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.2 }}
+                  className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow"
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="px-3 py-1 bg-[#F79332]/10 text-[#F79332] rounded-full text-sm font-medium">
+                      {notice.category}
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2">
+                    {notice.title}
+                  </h3>
+                  <p className="text-[#A6A9AB] text-sm">{notice.date}</p>
+                </motion.div>
+              ))
+            ) : (
+              <div className="col-span-3 text-center text-[#A6A9AB]">
+                공지사항을 불러오는 중입니다...
+              </div>
+            )}
+          </div>
+
+          <div className="text-center mt-12">
+            <Link
+              href="/notices"
+              className="inline-block bg-[#F79332] text-white px-8 py-3 rounded-full font-semibold hover:bg-[#F79332]/90 transition-all transform hover:scale-105"
+            >
+              공지사항 더보기
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Activities Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">활동소식</h2>
+            <p className="text-xl text-[#A6A9AB]">우리의 따뜻한 활동을 만나보세요</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {activities.length > 0 ? (
+              activities.map((activity, index) => (
+                <motion.div
+                  key={activity.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.2 }}
+                  className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
+                  onClick={() => setSelectedActivity(activity)}
+                >
+                  <div className="relative h-64">
+                    <Image
+                      src={getActivityProxyUrl(activity.images[0]) || '/placeholder-activity.jpg'}
+                      alt={activity.title}
+                      fill
+                      className="object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = '/placeholder-activity.jpg';
+                      }}
+                    />
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2">
+                      {activity.title}
+                    </h3>
+                    <p className="text-[#A6A9AB] text-sm mb-4">{activity.date}</p>
+                    <p className="text-gray-600 line-clamp-3 mb-4">{activity.description}</p>
+                    <button className="text-[#F79332] font-semibold hover:text-[#F79332]/80 transition-colors">
+                      자세히 보기 →
+                    </button>
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <div className="col-span-3 text-center text-[#A6A9AB]">
+                활동소식을 불러오는 중입니다...
+              </div>
+            )}
+          </div>
+
+          <div className="text-center mt-12">
+            <Link
+              href="/activities"
+              className="inline-block bg-[#F79332] text-white px-8 py-3 rounded-full font-semibold hover:bg-[#F79332]/90 transition-all transform hover:scale-105"
+            >
+              활동소식 더보기
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Activity Modal */}
+      {selectedActivity && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedActivity(null)}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {!showActivityDetail ? (
+              <>
+                <div className="relative h-96">
+                  <Image
+                    src={getActivityProxyUrl(selectedActivity.images[0]) || '/placeholder-activity.jpg'}
+                    alt={selectedActivity.title}
+                    fill
+                    className="object-cover rounded-t-2xl"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/placeholder-activity.jpg';
+                    }}
+                  />
+                </div>
+                <div className="p-8">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-4">{selectedActivity.title}</h2>
+                  <div className="flex items-center gap-4 text-[#A6A9AB] mb-6">
+                    <span className="flex items-center gap-2">
+                      <Calendar className="w-5 h-5" />
+                      {selectedActivity.date}
+                    </span>
+                    {selectedActivity.location && (
+                      <span className="flex items-center gap-2">
+                        <MapPin className="w-5 h-5" />
+                        {selectedActivity.location}
+                      </span>
+                    )}
+                    {selectedActivity.participantCount > 0 && (
+                      <span className="flex items-center gap-2">
+                        <UserCheck className="w-5 h-5" />
+                        {selectedActivity.participantCount}명 참여
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-gray-700 leading-relaxed mb-6 whitespace-pre-wrap">
+                    {selectedActivity.description}
+                  </p>
+                  {selectedActivity.tags && selectedActivity.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-6">
+                      {selectedActivity.tags.map((tag, idx) => (
+                        <span key={idx} className="px-3 py-1 bg-[#F79332]/10 text-[#F79332] rounded-full text-sm">
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setShowActivityDetail(true)}
+                      className="flex-1 bg-[#F79332] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#F79332]/90 transition-colors"
+                    >
+                      자세히 보기
+                    </button>
+                    <button
+                      onClick={() => setSelectedActivity(null)}
+                      className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                    >
+                      닫기
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="p-8">
+                <h2 className="text-3xl font-bold text-gray-900 mb-6">{selectedActivity.title}</h2>
+                
+                {selectedActivity.images && selectedActivity.images.length > 0 && (
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    {selectedActivity.images.map((img, idx) => (
+                      <div key={idx} className="relative h-64">
+                        <Image
+                          src={getActivityProxyUrl(img) || '/placeholder-activity.jpg'}
+                          alt={`${selectedActivity.title} ${idx + 1}`}
+                          fill
+                          className="object-cover rounded-lg"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = '/placeholder-activity.jpg';
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="space-y-4 mb-6">
+                  <div className="flex items-start gap-3">
+                    <Calendar className="w-5 h-5 text-[#F79332] mt-1" />
+                    <div>
+                      <p className="font-semibold text-gray-900">날짜</p>
+                      <p className="text-gray-600">{selectedActivity.date}</p>
+                    </div>
+                  </div>
+
+                  {selectedActivity.location && (
+                    <div className="flex items-start gap-3">
+                      <MapPin className="w-5 h-5 text-[#F79332] mt-1" />
+                      <div>
+                        <p className="font-semibold text-gray-900">장소</p>
+                        <p className="text-gray-600">{selectedActivity.location}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedActivity.program && (
+                    <div className="flex items-start gap-3">
+                      <BookOpen className="w-5 h-5 text-[#F79332] mt-1" />
+                      <div>
+                        <p className="font-semibold text-gray-900">프로그램</p>
+                        <p className="text-gray-600">{selectedActivity.program}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedActivity.participantCount > 0 && (
+                    <div className="flex items-start gap-3">
+                      <UserCheck className="w-5 h-5 text-[#F79332] mt-1" />
+                      <div>
+                        <p className="font-semibold text-gray-900">참여 인원</p>
+                        <p className="text-gray-600">{selectedActivity.participantCount}명</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mb-6">
+                  <h3 className="font-semibold text-gray-900 mb-2">활동 내용</h3>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {selectedActivity.description}
+                  </p>
+                </div>
+
+                {selectedActivity.tags && selectedActivity.tags.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="font-semibold text-gray-900 mb-2">태그</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedActivity.tags.map((tag, idx) => (
+                        <span key={idx} className="px-3 py-1 bg-[#F79332]/10 text-[#F79332] rounded-full text-sm">
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => {
+                      setShowActivityDetail(false);
+                      setSelectedActivity(null);
+                    }}
+                    className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                  >
+                    닫기
+                  </button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </div>
       )}
+
+      {/* Chairman Message Section */}
+      <section id="인사말" className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">이사장 인사말</h2>
+            <p className="text-xl text-[#A6A9AB]">따뜻한 마음으로 함께하겠습니다</p>
+          </div>
+
+          <div className="flex flex-col lg:flex-row items-center justify-center gap-12">
+            {/* Image Section */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+              className="flex-shrink-0"
+            >
+              <div className="relative w-64 h-80 lg:w-80 lg:h-96">
+                <Image
+                  src={chairmanImage}
+                  alt="이사장"
+                  fill
+                  className="rounded-2xl shadow-2xl object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/chairman_profile.jpg';
+                  }}
+                />
+              </div>
+            </motion.div>
+
+            {/* Badge - Positioned in the middle */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="flex-shrink-0"
+            >
+              <div className="relative">
+                <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-full bg-gradient-to-br from-[#F79332] to-[#F79332]/80 flex items-center justify-center shadow-2xl">
+                  <div className="text-center">
+                    <p className="text-white text-xs lg:text-sm font-medium mb-1">Since 2016</p>
+                    <p className="text-white text-sm lg:text-base font-bold leading-tight">
+                      10년의 약속<br/>
+                      변함없는 동행
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Text Section */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+              className="flex-1 max-w-2xl"
+            >
+              <div className="space-y-5 text-gray-700 leading-relaxed">
+                <p className="text-base lg:text-lg">
+                  안녕하십니까. 사단법인 S&J희망나눔 이사장 김성진입니다.
+                </p>
+                <p className="text-base lg:text-lg">
+                  우리 법인은 2016년 설립 이래, 지역사회의 소외된 이웃들과 함께 
+                  희망을 나누고 더 나은 내일을 만들어가는 데 최선을 다해왔습니다.
+                </p>
+                <p className="text-base lg:text-lg">
+                  교육, 문화, 복지 등 다양한 분야에서 실질적인 도움을 드리고자 
+                  끊임없이 노력하고 있으며, 많은 분들의 관심과 후원 덕분에 
+                  의미 있는 성과를 이루어낼 수 있었습니다.
+                </p>
+                <p className="text-base lg:text-lg">
+                  앞으로도 변함없는 마음으로 우리 사회의 따뜻한 동반자가 되어 
+                  더 많은 분들에게 희망과 행복을 전하는 법인이 되겠습니다.
+                </p>
+                <p className="text-base lg:text-lg font-semibold text-[#F79332]">
+                  여러분의 소중한 관심과 응원을 부탁드립니다. 감사합니다.
+                </p>
+                <div className="pt-4">
+                  <p className="text-lg lg:text-xl font-bold text-gray-900">사단법인 S&J희망나눔</p>
+                  <p className="text-base lg:text-lg font-semibold text-[#6C6E70]">이사장 김성진</p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Mission Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">우리의 미션</h2>
+            <p className="text-xl text-[#A6A9AB]">나눔으로 만드는 더 나은 세상</p>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-8">
+            {[
+              { icon: Heart, title: '사랑나눔', desc: '따뜻한 마음으로 이웃과 함께합니다' },
+              { icon: Users, title: '함께성장', desc: '지역사회와 더불어 성장합니다' },
+              { icon: BookOpen, title: '교육지원', desc: '꿈을 키우는 교육기회를 제공합니다' },
+              { icon: Award, title: '가치실현', desc: '나눔의 가치를 실천합니다' },
+            ].map((item, index) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="text-center p-6 rounded-xl hover:shadow-lg transition-shadow"
+              >
+                <div className="w-20 h-20 mx-auto mb-6 bg-[#F79332]/10 rounded-full flex items-center justify-center">
+                  <item.icon className="w-10 h-10 text-[#F79332]" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">{item.title}</h3>
+                <p className="text-[#A6A9AB]">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div className="col-span-2">
+              <Image 
+                src="/sj-hope-logo.png" 
+                alt="S&J 희망나눔" 
+                width={200}
+                height={60}
+                className="h-12 w-auto mb-4 brightness-0 invert"
+              />
+              <p className="text-gray-400 mb-4">
+                사단법인 S&J희망나눔<br />
+                함께 만드는 희망찬 내일
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-4">바로가기</h3>
+              <ul className="space-y-2">
+                <li><Link href="/notices" className="text-gray-400 hover:text-[#F79332] transition-colors">공지사항</Link></li>
+                <li><Link href="/activities" className="text-gray-400 hover:text-[#F79332] transition-colors">활동소식</Link></li>
+                <li><Link href="/programs" className="text-gray-400 hover:text-[#F79332] transition-colors">프로그램</Link></li>
+                <li><a href="#후원" className="text-gray-400 hover:text-[#F79332] transition-colors">후원하기</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-4">문의</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li>Tel: 02-1234-5678</li>
+                <li>Email: info@sjhope.or.kr</li>
+                <li>주소: 서울시 강남구</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
+            <p>&copy; 2024 사단법인 S&J희망나눔. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
