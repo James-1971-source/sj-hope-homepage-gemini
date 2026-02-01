@@ -12,13 +12,13 @@ import {
 export default function App() {
   const [activities, setActivities] = useState<any[]>([]);
   const [notices, setNotices] = useState<any[]>([]);
+  const [chairmanImage, setChairmanImage] = useState<string>('https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800');
   const [loading, setLoading] = useState(true);
   const [showToast, setShowToast] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<any>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [chairmanImage, setChairmanImage] = useState<string>('/chairman_profile.jpg');
 
-  // ✅ 공지사항 + 활동소식 동시 페칭
+  // ✅ 데이터 페칭 (수정됨)
   useEffect(() => {
     async function fetchData() {
       try {
@@ -46,11 +46,22 @@ export default function App() {
           }));
           setActivities(formatted);
         }
-        // ✅ 이사장 프로필 이미지
-        const aboutRes = await fetch('/api/about');
-        const aboutData = await aboutRes.json();
-        if (aboutData.chairmanImage) {
-          setChairmanImage(aboutData.chairmanImage);
+
+        // ✅ 이사장 프로필 이미지 (Notion DB에서)
+        try {
+          const aboutRes = await fetch('/api/about');
+          const aboutData = await aboutRes.json();
+          if (aboutData.chairmanImage) {
+            // Notion 이미지는 프록시 처리
+            const notionImage = aboutData.chairmanImage;
+            if (notionImage.includes('amazonaws.com') || notionImage.includes('s3.')) {
+              setChairmanImage(`/api/proxy?url=${encodeURIComponent(notionImage)}`);
+            } else {
+              setChairmanImage(notionImage);
+            }
+          }
+        } catch (error) {
+          console.log('⚠️ 이사장 이미지를 불러올 수 없습니다. 기본 이미지를 사용합니다.');
         }
       } catch (error) {
         console.error('Data fetch error:', error);
@@ -83,13 +94,13 @@ export default function App() {
     setCurrentImageIndex((prev) => (prev === 0 ? selectedActivity.images.length - 1 : prev - 1));
   }, [selectedActivity]);
 
-  const getProxyUrl = (url: string) => {
+  // ✅ 활동소식 전용 이미지 프록시 함수 (분리)
+  const getActivityProxyUrl = (url: string) => {
     if (!url) return 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b';
     if (url.includes('amazonaws.com')) return `/api/proxy?url=${encodeURIComponent(url)}`;
     return url;
   };
 
-  // ✅ 네비게이션 구조 - '소식' 하위에 '프로그램' 추가
   const navigation = [
     { name: '기관소개', sub: ['인사말', '미션과 비전', '연혁', '조직도', '오시는 길'] },
     { name: '사업소개', sub: ['IT 교육', '외국어 교육', '교육비 지원', '문화체험'] },
@@ -114,7 +125,7 @@ export default function App() {
         </div>
       )}
 
-      {/* NAVIGATION - ✅ 프로그램 링크 추가됨 */}
+      {/* NAVIGATION */}
       <nav className="fixed w-full bg-white/90 backdrop-blur-xl z-50 border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6 h-24 flex justify-between items-center">
           <Link href="/" className="flex items-center space-x-4 cursor-pointer">
@@ -133,7 +144,6 @@ export default function App() {
                 </button>
                 <div className="absolute top-full left-0 w-48 bg-white border border-slate-100 shadow-xl rounded-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top scale-95 group-hover:scale-100">
                   {item.sub.map((s) => {
-                    // ✅ 객체인 경우 Link 컴포넌트 사용
                     if (typeof s === 'object' && s.link) {
                       return (
                         <Link 
@@ -145,7 +155,6 @@ export default function App() {
                         </Link>
                       );
                     }
-                    // ✅ 문자열인 경우 기존 방식 유지
                     return (
                       <a 
                         key={s} 
@@ -184,41 +193,35 @@ export default function App() {
         </div>
       </section>
 
-      {/* CHAIRMAN MESSAGE - ✅ 수정된 부분 */}
+      {/* ✅ CHAIRMAN MESSAGE - 완전 수정됨 */}
       <section id="인사말" className="py-20 px-6 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
           <div className="relative">
-            {/* ✅ 이미지 크기 축소 및 Notion 연동 준비 */}
             <div className="aspect-[4/5] bg-gradient-to-br from-slate-200 to-slate-300 rounded-[48px] overflow-hidden shadow-2xl">
               <img 
-                src="/chairman_profile.jpg" 
+                src={chairmanImage}
                 alt="S&J 희망나눔 이사장" 
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  // ✅ 이미지 로드 실패 시 대체 이미지 표시
+                  console.error('이사장 이미지 로드 실패');
                   e.currentTarget.src = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800';
                 }}
               />
             </div>
-            {/* ✅ 뱃지 크기 축소 */}
             <div className="absolute -bottom-8 -right-8 bg-orange-600 text-white p-8 rounded-[40px] shadow-2xl hidden md:block">
               <p className="text-xs font-bold opacity-80 mb-1">Since 2016</p>
               <p className="text-lg font-black">10년의 약속,<br />변함없는 동행</p>
             </div>
           </div>
-          
           <div>
             <h2 className="text-orange-600 font-black text-xs tracking-widest uppercase mb-4">Chairman's Message</h2>
-            {/* ✅ 제목 크기 축소 */}
             <h3 className="text-3xl md:text-4xl font-black text-slate-900 mb-8 leading-tight">
               환경이 꿈의 한계가 되지 않도록,<br />S&J가 청소년의 곁을 지킵니다.
             </h3>
-            {/* ✅ 본문 텍스트 크기 축소 및 간격 줄이기 */}
             <div className="text-slate-600 text-base leading-relaxed font-medium space-y-6">
               <p>꿈을 마음껏 펼쳐야 할 청소년기에 가정환경의 어려움으로 스스로의 가능성을 닫는 아이들을 볼 때 가장 마음이 아픕니다. S&J희망나눔은 그런 아이들의 손을 잡고 밝은 미래로 나아가기 위해 설립되었습니다.</p>
               <p>지난 10년 동안 우리는 '청소년 글로벌 드림' 프로젝트를 통해 수많은 아이의 성장을 지켜보았습니다. 이제는 한 걸음 더 나아가, 급변하는 미래 사회에서 아이들이 소외되지 않도록 IT 교육과 인문학적 소양을 결합한 통합적 성장을 지원합니다.</p>
               <p>나눔은 또 다른 희망을 낳습니다. 아이들이 어려운 환경을 극복하고 당당한 사회의 일원으로 성장할 수 있도록 곁을 지키겠습니다.</p>
-              {/* ✅ 서명 영역 크기 축소 */}
               <div className="pt-4 border-t border-slate-100 mt-8">
                 <p className="text-slate-400 text-xs font-bold mb-2 uppercase tracking-widest">Chairman of S&J Hope Sharing</p>
                 <p className="text-xl font-black text-slate-900 underline decoration-orange-300 decoration-4 underline-offset-8">이사장 윤 동 성</p>
@@ -227,7 +230,6 @@ export default function App() {
           </div>
         </div>
       </section>
-
 
       {/* 📢 NOTICES SECTION */}
       <section id="공지사항" className="py-32 px-6 bg-white border-t border-slate-100">
@@ -289,7 +291,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* 📸 ACTIVITIES SECTION */}
+      {/* ✅ 📸 ACTIVITIES SECTION - 이미지 처리 수정됨 */}
       <section id="활동소식" className="py-32 px-6 bg-slate-50">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
@@ -314,8 +316,16 @@ export default function App() {
               activities.slice(0, 3).map((activity) => (
                 <div key={activity.id} onClick={() => setSelectedActivity(activity)} className="group bg-white rounded-[48px] overflow-hidden border border-slate-100 hover:border-orange-500 transition-all duration-500 shadow-sm hover:shadow-2xl cursor-pointer flex flex-col h-full">
                   <div className="aspect-[1.2/1] overflow-hidden relative">
-                    // ✅ 이미지 태그 수정
-                    <img src={getProxyUrl(chairmanImage)} alt="S&J 희망나눔 이사장" className="w-full h-full object-cover" onError={(e) => {e.currentTarget.src = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800';}}/>
+                    {/* ✅ 활동소식 전용 이미지 함수 사용 */}
+                    <img 
+                      src={getActivityProxyUrl(activity.images[0])} 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                      alt={activity.title}
+                      onError={(e) => {
+                        console.error('활동소식 이미지 로드 실패:', activity.images[0]);
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800';
+                      }}
+                    />
                     {activity.program && (
                       <div className="absolute top-6 left-6 bg-orange-600 text-white px-4 py-2 rounded-full text-xs font-black">
                         {activity.program}
@@ -416,7 +426,7 @@ export default function App() {
             <div className="overflow-y-auto flex-grow p-10 md:p-16 custom-scrollbar">
               {selectedActivity.images.length > 0 && (
                 <div className="relative aspect-video bg-slate-100 rounded-[40px] overflow-hidden mb-12 group">
-                  <img src={getProxyUrl(selectedActivity.images[currentImageIndex])} className="w-full h-full object-cover" alt="활동 이미지" />
+                  <img src={getActivityProxyUrl(selectedActivity.images[currentImageIndex])} className="w-full h-full object-cover" alt="활동 이미지" />
                   {selectedActivity.images.length > 1 && (
                     <>
                       <button onClick={prevImage} className="absolute left-6 top-1/2 -translate-y-1/2 p-4 bg-white/90 rounded-full text-slate-700 hover:text-orange-600 opacity-0 group-hover:opacity-100 transition-all"><ChevronLeft size={24} /></button>
