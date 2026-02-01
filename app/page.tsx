@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Menu, X, ChevronDown, Heart, Users, BookOpen, Award, Calendar, MapPin, UserCheck, Tag } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Menu, X, ChevronDown, ChevronLeft, ChevronRight, Heart, Users, BookOpen, Award, Calendar, MapPin, UserCheck } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -25,11 +25,21 @@ interface Activity {
   tags: string[];
 }
 
+interface Banner {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  order: number;
+}
+
 export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [chairmanImage, setChairmanImage] = useState('/chairman_profile.jpg');
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [showActivityDetail, setShowActivityDetail] = useState(false);
@@ -43,6 +53,17 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    // Fetch banners
+    fetch('/api/banners')
+      .then(res => res.json())
+      .then(data => {
+        if (data.length > 0) {
+          setBanners(data);
+        }
+      })
+      .catch(err => console.error('Failed to fetch banners:', err));
+
+    // Fetch notices
     fetch('/api/notices')
       .then(res => res.json())
       .then(data => {
@@ -52,6 +73,7 @@ export default function Home() {
       })
       .catch(err => console.error('Failed to fetch notices:', err));
 
+    // Fetch activities
     fetch('/api/activities')
       .then(res => res.json())
       .then(data => {
@@ -72,6 +94,7 @@ export default function Home() {
       })
       .catch(err => console.error('Failed to fetch activities:', err));
 
+    // Fetch chairman info
     fetch('/api/about')
       .then(res => res.json())
       .then(data => {
@@ -85,6 +108,16 @@ export default function Home() {
       .catch(err => console.error('Failed to fetch chairman info:', err));
   }, []);
 
+  // Auto-rotate banners
+  useEffect(() => {
+    if (banners.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [banners.length]);
+
   const getActivityProxyUrl = (url: string) => {
     if (url && url.startsWith('http') && url.includes('amazonaws.com')) {
       return `/api/proxy?url=${encodeURIComponent(url)}`;
@@ -92,16 +125,83 @@ export default function Home() {
     return url;
   };
 
+  const getBannerProxyUrl = (url: string) => {
+    if (url && url.startsWith('http') && url.includes('amazonaws.com')) {
+      return `/api/proxy?url=${encodeURIComponent(url)}`;
+    }
+    return url;
+  };
+
+  const nextBanner = () => {
+    setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
+  };
+
+  const prevBanner = () => {
+    setCurrentBannerIndex((prev) => (prev - 1 + banners.length) % banners.length);
+  };
+
   const navigation = [
-    { name: '소개', href: '#소개', sub: ['인사말', '설립목적', '주요사업', '연혁', '조직도', '찾아오시는 길'] },
-    { name: '소식', href: '#소식', sub: [
-      { name: '공지사항', href: '/notices' },
-      { name: '활동소식', href: '/activities' },
-      { name: '프로그램', href: '/programs' },
-      '언론보도'
-    ]},
-    { name: '후원', href: '#후원', sub: ['후원안내', '후원신청', '후원자 명단'] },
-    { name: '참여', href: '#참여', sub: ['봉사활동 신청', 'FAQ', '문의하기'] },
+    {
+      name: '기관소개',
+      href: '#기관소개',
+      sub: [
+        'S&J희망나눔은',
+        '인사말',
+        '미션과 비전',
+        '연혁',
+        '조직도',
+        '오시는 길'
+      ]
+    },
+    {
+      name: '사업소개',
+      href: '#사업소개',
+      sub: [
+        '글로벌 드림 프로젝트',
+        'IT 교육 지원 사업',
+        '외국어 교육 지원 사업',
+        '교육비 지원 사업',
+        '문화체험 지원 사업',
+        '아동복지시설 지원 사업',
+        'IT 교육장 지원 사업'
+      ]
+    },
+    {
+      name: '소식',
+      href: '#소식',
+      sub: [
+        { name: '공지사항', href: '/notices' },
+        { name: '활동 소식', href: '/activities' },
+        { name: '프로그램', href: '/programs' },
+        '언론 보도',
+        '캠페인'
+      ]
+    },
+    {
+      name: '참여',
+      href: '#참여',
+      sub: [
+        '후원하기',
+        '자원봉사 신청',
+        'FAQ',
+        '문의하기'
+      ]
+    },
+    {
+      name: '자료실',
+      href: '#자료실',
+      sub: [
+        '성과 보고서',
+        '재무공시',
+        '서식 다운로드',
+        '소식지',
+        '회원 명단',
+        '후원자 명단',
+        '재능기부활동가 명단',
+        '끌레브 장학회',
+        '글로벌 서포터즈'
+      ]
+    },
   ];
 
   return (
@@ -136,7 +236,7 @@ export default function Home() {
                     {item.sub && <ChevronDown className="inline ml-1 h-4 w-4" />}
                   </a>
                   {item.sub && (
-                    <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                    <div className="absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                       <div className="py-2">
                         {item.sub.map((subItem) => {
                           if (typeof subItem === 'object') {
@@ -224,36 +324,110 @@ export default function Home() {
         )}
       </nav>
 
-      {/* Hero Section */}
+      {/* Hero Banner Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920"
-            alt="Hero Background"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#F79332]/90 to-[#F79332]/70" />
-        </div>
-        
-        <div className="relative z-10 text-center text-white px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <h1 className="text-5xl md:text-7xl font-bold mb-6">
-              함께 만드는<br />희망찬 내일
-            </h1>
-            <p className="text-xl md:text-2xl mb-8 text-white/90">
-              사단법인 S&J희망나눔과 함께하는 따뜻한 동행
-            </p>
-            <button className="bg-white text-[#F79332] px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-100 transition-all transform hover:scale-105">
-              후원하기
+        <AnimatePresence mode="wait">
+          {banners.length > 0 ? (
+            <motion.div
+              key={currentBannerIndex}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+              className="absolute inset-0"
+            >
+              <Image
+                src={getBannerProxyUrl(banners[currentBannerIndex].image) || 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920'}
+                alt={banners[currentBannerIndex].title}
+                fill
+                className="object-cover"
+                priority
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/40" />
+              
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center text-white px-4 max-w-4xl">
+                  <motion.h1
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="text-5xl md:text-7xl font-bold mb-6"
+                  >
+                    {banners[currentBannerIndex].title}
+                  </motion.h1>
+                  <motion.p
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="text-xl md:text-2xl mb-8"
+                  >
+                    {banners[currentBannerIndex].description}
+                  </motion.p>
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <div className="absolute inset-0">
+              <Image
+                src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920"
+                alt="Hero Background"
+                fill
+                className="object-cover"
+                priority
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#F79332]/90 to-[#F79332]/70" />
+              
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center text-white px-4">
+                  <h1 className="text-5xl md:text-7xl font-bold mb-6">
+                    함께 만드는<br />희망찬 내일
+                  </h1>
+                  <p className="text-xl md:text-2xl mb-8 text-white/90">
+                    사단법인 S&J희망나눔과 함께하는 따뜻한 동행
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* Banner Navigation Arrows */}
+        {banners.length > 1 && (
+          <>
+            <button
+              onClick={prevBanner}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-white/20 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-sm transition-all"
+              aria-label="Previous banner"
+            >
+              <ChevronLeft className="w-6 h-6" />
             </button>
-          </motion.div>
-        </div>
+            <button
+              onClick={nextBanner}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-white/20 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-sm transition-all"
+              aria-label="Next banner"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+
+            {/* Banner Indicators */}
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+              {banners.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentBannerIndex(index)}
+                  className={`w-3 h-3 rounded-full transition-all ${
+                    index === currentBannerIndex ? 'bg-white w-8' : 'bg-white/50'
+                  }`}
+                  aria-label={`Go to banner ${index + 1}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </section>
 
       {/* Notices Section */}
@@ -539,8 +713,8 @@ export default function Home() {
       <section id="인사말" className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
+            <p className="text-sm text-[#F79332] font-semibold mb-2">CHAIRMAN'S MESSAGE</p>
             <h2 className="text-4xl font-bold text-gray-900 mb-4">이사장 인사말</h2>
-            <p className="text-xl text-[#A6A9AB]">따뜻한 마음으로 함께하겠습니다</p>
           </div>
 
           <div className="flex flex-col lg:flex-row items-center justify-center gap-12">
@@ -554,7 +728,7 @@ export default function Home() {
               <div className="relative w-64 h-80 lg:w-80 lg:h-96">
                 <Image
                   src={chairmanImage}
-                  alt="이사장"
+                  alt="이사장 윤동성"
                   fill
                   className="rounded-2xl shadow-2xl object-cover"
                   onError={(e) => {
@@ -592,29 +766,23 @@ export default function Home() {
               transition={{ duration: 0.8 }}
               className="flex-1 max-w-2xl"
             >
+              <h3 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-6">
+                환경이 꿈의 한계가 되지 않도록,<br/>
+                S&J가 청소년의 곁을 지킵니다.
+              </h3>
               <div className="space-y-5 text-gray-700 leading-relaxed">
                 <p className="text-base lg:text-lg">
-                  안녕하십니까. 사단법인 S&J희망나눔 이사장 김성진입니다.
+                  꿈을 마음껏 펼쳐야 할 청소년기에 가정환경의 어려움으로 스스로의 가능성을 닫는 아이들을 볼 때 가장 마음이 아픕니다. S&J희망나눔은 그런 아이들의 손을 잡고 밝은 미래로 나아가기 위해 설립되었습니다.
                 </p>
                 <p className="text-base lg:text-lg">
-                  우리 법인은 2016년 설립 이래, 지역사회의 소외된 이웃들과 함께 
-                  희망을 나누고 더 나은 내일을 만들어가는 데 최선을 다해왔습니다.
+                  지난 10년 동안 우리는 '청소년 글로벌 드림' 프로젝트를 통해 수많은 아이의 성장을 지켜보았습니다. 이제는 한 걸음 더 나아가, 급변하는 미래 사회에서 아이들이 소외되지 않도록 IT 교육과 인문학적 소양을 결합한 통합적 성장을 지원합니다.
                 </p>
                 <p className="text-base lg:text-lg">
-                  교육, 문화, 복지 등 다양한 분야에서 실질적인 도움을 드리고자 
-                  끊임없이 노력하고 있으며, 많은 분들의 관심과 후원 덕분에 
-                  의미 있는 성과를 이루어낼 수 있었습니다.
+                  나눔은 또 다른 희망을 낳습니다. 아이들이 어려운 환경을 극복하고 당당한 사회의 일원으로 성장할 수 있도록 곁을 지키겠습니다.
                 </p>
-                <p className="text-base lg:text-lg">
-                  앞으로도 변함없는 마음으로 우리 사회의 따뜻한 동반자가 되어 
-                  더 많은 분들에게 희망과 행복을 전하는 법인이 되겠습니다.
-                </p>
-                <p className="text-base lg:text-lg font-semibold text-[#F79332]">
-                  여러분의 소중한 관심과 응원을 부탁드립니다. 감사합니다.
-                </p>
-                <div className="pt-4">
-                  <p className="text-lg lg:text-xl font-bold text-gray-900">사단법인 S&J희망나눔</p>
-                  <p className="text-base lg:text-lg font-semibold text-[#6C6E70]">이사장 김성진</p>
+                <div className="pt-4 border-t border-gray-200">
+                  <p className="text-sm text-[#A6A9AB] mb-2">CHAIRMAN OF S&J HOPE SHARING</p>
+                  <p className="text-lg lg:text-xl font-bold text-gray-900">이사장 윤 동 성</p>
                 </div>
               </div>
             </motion.div>
@@ -671,6 +839,43 @@ export default function Home() {
                 사단법인 S&J희망나눔<br />
                 함께 만드는 희망찬 내일
               </p>
+              
+              {/* Social Media Icons */}
+              <div className="flex gap-4 mt-6">
+                <a 
+                  href="https://www.youtube.com/@SJ-lv4ft" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-gray-800 hover:bg-[#F79332] flex items-center justify-center transition-colors"
+                  aria-label="유튜브"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                  </svg>
+                </a>
+                <a 
+                  href="https://www.instagram.com/sj_hopesharing/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-gray-800 hover:bg-[#F79332] flex items-center justify-center transition-colors"
+                  aria-label="인스타그램"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                  </svg>
+                </a>
+                <a 
+                  href="https://blog.naver.com/sjhopesharing" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-gray-800 hover:bg-[#F79332] flex items-center justify-center transition-colors"
+                  aria-label="블로그"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M16.273 12.845 7.376 0H0v24h7.726V11.156L16.624 24H24V0h-7.727v12.845z"/>
+                  </svg>
+                </a>
+              </div>
             </div>
 
             <div>
@@ -684,17 +889,34 @@ export default function Home() {
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold mb-4">문의</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li>Tel: 02-1234-5678</li>
-                <li>Email: info@sjhope.or.kr</li>
-                <li>주소: 서울시 강남구</li>
-              </ul>
+              <h3 className="text-lg font-semibold mb-4">후원 계좌</h3>
+              <div className="text-gray-400 space-y-2 text-sm">
+                <p className="font-semibold text-white">주원장은행</p>
+                <p>501-910055-21605</p>
+                <p className="font-semibold text-white mt-3">대구은행</p>
+                <p>504-10-319709-1</p>
+                <p className="text-xs mt-2">(사)S&J희망나눔</p>
+              </div>
             </div>
           </div>
 
-          <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 사단법인 S&J희망나눔. All rights reserved.</p>
+          <div className="border-t border-gray-800 pt-8">
+            <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-400">
+              <div>
+                <p className="mb-2"><span className="font-semibold">대표자:</span> 윤동성</p>
+                <p className="mb-2"><span className="font-semibold">본부:</span> 서울특별시 중구 동국대1길 115 신세대빌딩 9층 906호(41940)</p>
+                <p className="mb-2"><span className="font-semibold">대표전화:</span> 053-428-7942</p>
+              </div>
+              <div>
+                <p className="mb-2"><span className="font-semibold">지부:</span> 서울특별시 중구구 창경궁로 48, (사)S&J희망나눔은 본관</p>
+                <p className="mb-2"><span className="font-semibold">대표전화:</span> 02-6964-7940</p>
+                <p className="mb-2"><span className="font-semibold">메일:</span> sjfoundation@sj-hs.or.kr</p>
+                <p className="mb-2"><span className="font-semibold">상담시간:</span> 10:00~17:00</p>
+              </div>
+            </div>
+            <div className="text-center mt-6 text-gray-500 text-sm">
+              <p>Copyright@ 2026 (사)S&J 희망나눔. All rights reserved</p>
+            </div>
           </div>
         </div>
       </footer>
