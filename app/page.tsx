@@ -193,11 +193,12 @@ export default function App() {
         </div>
       </section>
 
-      {/* ✅ CHAIRMAN MESSAGE - 완전 수정됨 */}
-      <section id="인사말" className="py-20 px-6 bg-white overflow-hidden">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
-          <div className="relative">
-            <div className="aspect-[4/5] bg-gradient-to-br from-slate-200 to-slate-300 rounded-[48px] overflow-hidden shadow-2xl">
+      {/* ✅ CHAIRMAN MESSAGE - 이미지 크기 30% 축소 + 화면 최적화 */}
+      <section id="인사말" className="py-16 px-6 bg-white overflow-hidden">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+          {/* ✅ 이미지 영역 - 30% 축소 */}
+          <div className="relative flex justify-center lg:justify-start">
+            <div className="w-[70%] aspect-[3/4] bg-gradient-to-br from-slate-200 to-slate-300 rounded-[40px] overflow-hidden shadow-2xl">
               <img 
                 src={chairmanImage}
                 alt="S&J 희망나눔 이사장" 
@@ -208,23 +209,26 @@ export default function App() {
                 }}
               />
             </div>
-            <div className="absolute -bottom-8 -right-8 bg-orange-600 text-white p-8 rounded-[40px] shadow-2xl hidden md:block">
-              <p className="text-xs font-bold opacity-80 mb-1">Since 2016</p>
-              <p className="text-lg font-black">10년의 약속,<br />변함없는 동행</p>
+            {/* ✅ 뱃지 크기 축소 및 위치 조정 */}
+            <div className="absolute -bottom-6 -right-6 bg-orange-600 text-white p-6 rounded-[32px] shadow-2xl hidden md:block">
+              <p className="text-[10px] font-bold opacity-80 mb-1">Since 2016</p>
+              <p className="text-base font-black leading-tight">10년의 약속,<br />변함없는 동행</p>
             </div>
           </div>
+          
+          {/* ✅ 텍스트 영역 */}
           <div>
-            <h2 className="text-orange-600 font-black text-xs tracking-widest uppercase mb-4">Chairman's Message</h2>
-            <h3 className="text-3xl md:text-4xl font-black text-slate-900 mb-8 leading-tight">
+            <h2 className="text-orange-600 font-black text-[10px] tracking-widest uppercase mb-3">Chairman's Message</h2>
+            <h3 className="text-3xl md:text-4xl font-black text-slate-900 mb-6 leading-tight">
               환경이 꿈의 한계가 되지 않도록,<br />S&J가 청소년의 곁을 지킵니다.
             </h3>
-            <div className="text-slate-600 text-base leading-relaxed font-medium space-y-6">
+            <div className="text-slate-600 text-sm md:text-base leading-relaxed font-medium space-y-5">
               <p>꿈을 마음껏 펼쳐야 할 청소년기에 가정환경의 어려움으로 스스로의 가능성을 닫는 아이들을 볼 때 가장 마음이 아픕니다. S&J희망나눔은 그런 아이들의 손을 잡고 밝은 미래로 나아가기 위해 설립되었습니다.</p>
               <p>지난 10년 동안 우리는 '청소년 글로벌 드림' 프로젝트를 통해 수많은 아이의 성장을 지켜보았습니다. 이제는 한 걸음 더 나아가, 급변하는 미래 사회에서 아이들이 소외되지 않도록 IT 교육과 인문학적 소양을 결합한 통합적 성장을 지원합니다.</p>
               <p>나눔은 또 다른 희망을 낳습니다. 아이들이 어려운 환경을 극복하고 당당한 사회의 일원으로 성장할 수 있도록 곁을 지키겠습니다.</p>
-              <div className="pt-4 border-t border-slate-100 mt-8">
-                <p className="text-slate-400 text-xs font-bold mb-2 uppercase tracking-widest">Chairman of S&J Hope Sharing</p>
-                <p className="text-xl font-black text-slate-900 underline decoration-orange-300 decoration-4 underline-offset-8">이사장 윤 동 성</p>
+              <div className="pt-4 border-t border-slate-100 mt-6">
+                <p className="text-slate-400 text-[10px] font-bold mb-2 uppercase tracking-widest">Chairman of S&J Hope Sharing</p>
+                <p className="text-lg md:text-xl font-black text-slate-900 underline decoration-orange-300 decoration-4 underline-offset-8">이사장 윤 동 성</p>
               </div>
             </div>
           </div>
