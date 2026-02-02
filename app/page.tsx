@@ -40,6 +40,7 @@ export default function Home() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const [slideDirection, setSlideDirection] = useState(1);
   const [chairmanImage, setChairmanImage] = useState('/chairman_profile.jpg');
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [showActivityDetail, setShowActivityDetail] = useState(false);
@@ -53,17 +54,50 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // Fetch banners
     fetch('/api/banners')
       .then(res => res.json())
       .then(data => {
         if (data.length > 0) {
           setBanners(data);
+        } else {
+          setBanners([
+            {
+              id: '1',
+              title: '청소년 글로벌 드림 프로젝트',
+              description: '꿈을 향한 도전, S&J희망나눔이 함께합니다',
+              image: 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=1920',
+              order: 1
+            },
+            {
+              id: '2',
+              title: 'IT 교육으로 미래를 준비합니다',
+              description: '청소년들의 디지털 역량 강화를 지원합니다',
+              image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920',
+              order: 2
+            },
+            {
+              id: '3',
+              title: '함께 만드는 희망찬 내일',
+              description: '청소년이 행복한 세상을 만드는 것',
+              image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1920',
+              order: 3
+            }
+          ]);
         }
       })
-      .catch(err => console.error('Failed to fetch banners:', err));
+      .catch(err => {
+        console.error('Failed to fetch banners:', err);
+        setBanners([
+          {
+            id: '1',
+            title: '함께 만드는 희망찬 내일',
+            description: '사단법인 S&J희망나눔과 함께하는 따뜻한 동행',
+            image: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920',
+            order: 1
+          }
+        ]);
+      });
 
-    // Fetch notices
     fetch('/api/notices')
       .then(res => res.json())
       .then(data => {
@@ -73,7 +107,6 @@ export default function Home() {
       })
       .catch(err => console.error('Failed to fetch notices:', err));
 
-    // Fetch activities
     fetch('/api/activities')
       .then(res => res.json())
       .then(data => {
@@ -94,7 +127,6 @@ export default function Home() {
       })
       .catch(err => console.error('Failed to fetch activities:', err));
 
-    // Fetch chairman info
     fetch('/api/about')
       .then(res => res.json())
       .then(data => {
@@ -105,13 +137,16 @@ export default function Home() {
           setChairmanImage(imageUrl);
         }
       })
-      .catch(err => console.error('Failed to fetch chairman info:', err));
+      .catch(err => {
+        console.error('Failed to fetch chairman info:', err);
+        setChairmanImage('/chairman_profile.jpg');
+      });
   }, []);
 
-  // Auto-rotate banners
   useEffect(() => {
     if (banners.length > 1) {
       const interval = setInterval(() => {
+        setSlideDirection(1);
         setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
       }, 5000);
       return () => clearInterval(interval);
@@ -133,11 +168,28 @@ export default function Home() {
   };
 
   const nextBanner = () => {
+    setSlideDirection(1);
     setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
   };
 
   const prevBanner = () => {
+    setSlideDirection(-1);
     setCurrentBannerIndex((prev) => (prev - 1 + banners.length) % banners.length);
+  };
+
+  const slideVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 1000 : -1000,
+      opacity: 0
+    }),
+    center: {
+      x: 0,
+      opacity: 1
+    },
+    exit: (direction: number) => ({
+      x: direction > 0 ? -1000 : 1000,
+      opacity: 0
+    })
   };
 
   const navigation = [
@@ -210,7 +262,6 @@ export default function Home() {
       <nav className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-lg' : 'bg-white/90 backdrop-blur-sm'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
-            {/* Logo */}
             <div className="flex-shrink-0">
               <Link href="/">
                 <Image 
@@ -224,7 +275,6 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Desktop Navigation */}
             <div className="hidden md:flex space-x-8">
               {navigation.map((item) => (
                 <div key={item.name} className="relative group">
@@ -267,7 +317,6 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Mobile menu button */}
             <div className="md:hidden">
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -279,7 +328,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-t">
             <div className="px-2 pt-2 pb-3 space-y-1">
@@ -326,76 +374,56 @@ export default function Home() {
 
       {/* Hero Banner Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        <AnimatePresence mode="wait">
-          {banners.length > 0 ? (
-            <motion.div
-              key={currentBannerIndex}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-              className="absolute inset-0"
-            >
-              <Image
-                src={getBannerProxyUrl(banners[currentBannerIndex].image) || 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920'}
-                alt={banners[currentBannerIndex].title}
-                fill
-                className="object-cover"
-                priority
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920';
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/40" />
-              
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center text-white px-4 max-w-4xl">
-                  <motion.h1
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="text-5xl md:text-7xl font-bold mb-6"
-                  >
-                    {banners[currentBannerIndex].title}
-                  </motion.h1>
-                  <motion.p
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.4 }}
-                    className="text-xl md:text-2xl mb-8"
-                  >
-                    {banners[currentBannerIndex].description}
-                  </motion.p>
-                </div>
-              </div>
-            </motion.div>
-          ) : (
-            <div className="absolute inset-0">
-              <Image
-                src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920"
-                alt="Hero Background"
-                fill
-                className="object-cover"
-                priority
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#F79332]/90 to-[#F79332]/70" />
-              
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center text-white px-4">
-                  <h1 className="text-5xl md:text-7xl font-bold mb-6">
-                    함께 만드는<br />희망찬 내일
-                  </h1>
-                  <p className="text-xl md:text-2xl mb-8 text-white/90">
-                    사단법인 S&J희망나눔과 함께하는 따뜻한 동행
-                  </p>
-                </div>
+        <AnimatePresence initial={false} custom={slideDirection} mode="wait">
+          <motion.div
+            key={currentBannerIndex}
+            custom={slideDirection}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{
+              x: { type: "spring", stiffness: 300, damping: 30 },
+              opacity: { duration: 0.3 }
+            }}
+            className="absolute inset-0"
+          >
+            <Image
+              src={getBannerProxyUrl(banners[currentBannerIndex]?.image) || 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920'}
+              alt={banners[currentBannerIndex]?.title || 'Banner'}
+              fill
+              className="object-cover"
+              priority
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920';
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/40" />
+            
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center text-white px-4 max-w-4xl">
+                <motion.h1
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-5xl md:text-7xl font-bold mb-6"
+                >
+                  {banners[currentBannerIndex]?.title || '함께 만드는 희망찬 내일'}
+                </motion.h1>
+                <motion.p
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-xl md:text-2xl mb-8"
+                >
+                  {banners[currentBannerIndex]?.description || '사단법인 S&J희망나눔과 함께하는 따뜻한 동행'}
+                </motion.p>
               </div>
             </div>
-          )}
+          </motion.div>
         </AnimatePresence>
 
-        {/* Banner Navigation Arrows */}
         {banners.length > 1 && (
           <>
             <button
@@ -413,14 +441,16 @@ export default function Home() {
               <ChevronRight className="w-6 h-6" />
             </button>
 
-            {/* Banner Indicators */}
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex gap-2">
               {banners.map((_, index) => (
                 <button
                   key={index}
-                  onClick={() => setCurrentBannerIndex(index)}
-                  className={`w-3 h-3 rounded-full transition-all ${
-                    index === currentBannerIndex ? 'bg-white w-8' : 'bg-white/50'
+                  onClick={() => {
+                    setSlideDirection(index > currentBannerIndex ? 1 : -1);
+                    setCurrentBannerIndex(index);
+                  }}
+                  className={`h-3 rounded-full transition-all ${
+                    index === currentBannerIndex ? 'bg-white w-8' : 'bg-white/50 w-3'
                   }`}
                   aria-label={`Go to banner ${index + 1}`}
                 />
@@ -718,7 +748,6 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col lg:flex-row items-center justify-center gap-12">
-            {/* Image Section */}
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -739,7 +768,6 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* Badge - Positioned in the middle */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -759,7 +787,6 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* Text Section */}
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -828,19 +855,21 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div className="col-span-2">
-              <Image 
-                src="/sj-hope-logo.png" 
-                alt="S&J 희망나눔" 
-                width={200}
-                height={60}
-                className="h-12 w-auto mb-4 brightness-0 invert"
-              />
+              <div className="mb-4">
+                <Image 
+                  src="/sj-hope-logo.png" 
+                  alt="S&J 희망나눔" 
+                  width={200}
+                  height={60}
+                  className="h-12 w-auto"
+                  style={{ filter: 'brightness(0) invert(1)' }}
+                />
+              </div>
               <p className="text-gray-400 mb-4">
                 사단법인 S&J희망나눔<br />
                 함께 만드는 희망찬 내일
               </p>
               
-              {/* Social Media Icons */}
               <div className="flex gap-4 mt-6">
                 <a 
                   href="https://www.youtube.com/@SJ-lv4ft" 
