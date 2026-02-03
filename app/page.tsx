@@ -856,14 +856,21 @@ export default function Home() {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div className="col-span-2">
               <div className="mb-4">
-                <Image 
-                  src="/sj-hope-logo.png" 
-                  alt="S&J 희망나눔" 
-                  width={200}
-                  height={60}
-                  className="h-12 w-auto"
-                  style={{ filter: 'brightness(0) invert(1)' }}
-                />
+                {/* 푸터 로고 - 흰색으로 표시 */}
+                  <Link href="/" className="flex-shrink-0">
+                    <Image
+                      src="/sj-hope-logo.png"
+                      alt="S&J 희망나눔"
+                      width={200}
+                      height={60}
+                      style={{ 
+                        filter: 'brightness(0) saturate(100%) invert(100%)' 
+                      }}
+                      className="h-16 w-auto object-contain"
+                      priority
+                    />
+                  </Link>
+
               </div>
               <p className="text-gray-400 mb-4">
                 사단법인 S&J희망나눔<br />
@@ -920,7 +927,7 @@ export default function Home() {
             <div>
               <h3 className="text-lg font-semibold mb-4">후원 계좌</h3>
               <div className="text-gray-400 space-y-2 text-sm">
-                <p className="font-semibold text-white">주원장은행</p>
+                <p className="font-semibold text-white">하나은행</p>
                 <p>501-910055-21605</p>
                 <p className="font-semibold text-white mt-3">대구은행</p>
                 <p>504-10-319709-1</p>
@@ -933,12 +940,12 @@ export default function Home() {
             <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-400">
               <div>
                 <p className="mb-2"><span className="font-semibold">대표자:</span> 윤동성</p>
-                <p className="mb-2"><span className="font-semibold">본부:</span> 서울특별시 중구 동국대1길 115 신세대빌딩 9층 906호(41940)</p>
+                <p className="mb-2"><span className="font-semibold">본부:</span> 대구광역시 중구 동덕로 115 진석타워 9층 906호(41940)</p>
                 <p className="mb-2"><span className="font-semibold">대표전화:</span> 053-428-7942</p>
               </div>
               <div>
-                <p className="mb-2"><span className="font-semibold">지부:</span> 서울특별시 중구구 창경궁로 48, (사)S&J희망나눔은 본관</p>
-                <p className="mb-2"><span className="font-semibold">대표전화:</span> 02-6964-7940</p>
+                <p className="mb-2"><span className="font-semibold">지부:</span> 서울특별시 종로구 송월길 48, (사)S&J희망나눔 본관</p>
+                <p className="mb-2"><span className="font-semibold">대표전화:</span> 053-428-7942</p>
                 <p className="mb-2"><span className="font-semibold">메일:</span> sjfoundation@sj-hs.or.kr</p>
                 <p className="mb-2"><span className="font-semibold">상담시간:</span> 10:00~17:00</p>
               </div>
