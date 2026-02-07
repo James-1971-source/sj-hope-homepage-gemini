@@ -35,6 +35,15 @@ export default function BusinessPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('전체');
   const [loading, setLoading] = useState(true);
 
+  // URL 파라미터에서 카테고리 읽기
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const categoryParam = urlParams.get('category');
+    if (categoryParam) {
+      setSelectedCategory(decodeURIComponent(categoryParam));
+    }
+  }, []);
+
   useEffect(() => {
     fetchBusinesses();
   }, []);
