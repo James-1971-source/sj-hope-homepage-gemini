@@ -207,15 +207,16 @@ export default function Home() {
   },
   {
     name: '사업소개',
-    href: '/business',  // ← 이 부분을 수정!
+    href: '/business',
     sub: [
-      '글로벌 드림 프로젝트',
-      'IT 교육 지원 사업',
-      '외국어 교육 지원 사업',
-      '교육비 지원 사업',
-      '문화체험 지원 사업',
-      '아동복지시설 지원 사업',
-      'IT 교육장 지원 사업'
+      { name: '전체', href: '/business' },
+      { name: '글로벌 드림 프로젝트', href: '/business?category=글로벌 드림 프로젝트' },
+      { name: 'IT 교육 지원 사업', href: '/business?category=IT 교육 지원 사업' },
+      { name: '외국어 교육 지원 사업', href: '/business?category=외국어 교육 지원 사업' },
+      { name: '교육비 지원 사업', href: '/business?category=교육비 지원 사업' },
+      { name: '문화체험 지원 사업', href: '/business?category=문화체험 지원 사업' },
+      { name: '아동복지시설 지원 사업', href: '/business?category=아동복지시설 지원 사업' },
+      { name: 'IT 교육장 지원 사업', href: '/business?category=IT 교육장 지원 사업' }
     ]
   },
   {
@@ -255,6 +256,7 @@ export default function Home() {
     ]
   },
 ];
+
 
 
   return (
